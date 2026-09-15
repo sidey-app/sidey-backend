@@ -7,7 +7,7 @@ SIDEY_CONCURRENCY_TMP=$(mktemp -d "${TMPDIR:-/tmp}/sidey-db-concurrency.XXXXXX")
 
 cleanup() {
 	docker exec "$SIDEY_DB_CONTAINER" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q \
-		-c "drop trigger if exists sidey_concurrency_pause_room_members on public.room_members; drop trigger if exists sidey_concurrency_pause_invite_attempts on private.invite_attempts; drop function if exists private.sidey_concurrency_pause_before_insert(); delete from public.rooms where id::text like '40000000-0000-0000-0000-%'; delete from auth.users where id::text like '30000000-0000-0000-0000-%';" \
+		-c "drop trigger if exists sidey_concurrency_pause_profiles on public.profiles; drop trigger if exists sidey_concurrency_pause_room_members on public.room_members; drop trigger if exists sidey_concurrency_pause_invite_attempts on private.invite_attempts; drop function if exists private.sidey_concurrency_pause_before_insert(); delete from public.rooms where id::text like '40000000-0000-0000-0000-%'; delete from auth.users where id::text like '30000000-0000-0000-0000-%';" \
 		>/dev/null 2>&1 || true
 	rm -rf "$SIDEY_CONCURRENCY_TMP"
 }
@@ -90,4 +90,25 @@ SIDEY_INVITE_ATTEMPT_COUNT=$(docker exec "$SIDEY_DB_CONTAINER" psql -U postgres 
 grep -Fq 'invalid_invite_code' "$SIDEY_CONCURRENCY_TMP/rate-a.out" "$SIDEY_CONCURRENCY_TMP/rate-b.out"
 grep -Fq 'invite_rate_limited' "$SIDEY_CONCURRENCY_TMP/rate-a.out" "$SIDEY_CONCURRENCY_TMP/rate-b.out"
 
-printf 'Supabase concurrent limits passed: five rooms, twelve members, invite rate limit\n'
+# Two devices race to migrate different local preferences at revision zero.
+# Both must receive the same committed winner and only one revision is created.
+run_tree_preference() {
+	SIDEY_PAUSED=$1
+	SIDEY_OUTPUT=$2
+	docker exec "$SIDEY_DB_CONTAINER" psql -U postgres -d postgres -qAt -v ON_ERROR_STOP=1 \
+		-c "begin; set local role authenticated; select set_config('request.jwt.claim.sub', '30000000-0000-0000-0000-000000000001', true); select set_config('sidey.concurrency_test', 'on', true); select pg_sleep(0.25); select tree_movement_paused::text || ':' || tree_movement_revision::text from public.set_tree_movement_paused($SIDEY_PAUSED, 0); commit;" \
+		> "$SIDEY_OUTPUT"
+}
+run_tree_preference true "$SIDEY_CONCURRENCY_TMP/tree-a.out" &
+SIDEY_PID_ONE=$!
+run_tree_preference false "$SIDEY_CONCURRENCY_TMP/tree-b.out" &
+SIDEY_PID_TWO=$!
+wait "$SIDEY_PID_ONE"
+wait "$SIDEY_PID_TWO"
+SIDEY_TREE_STATE=$(docker exec "$SIDEY_DB_CONTAINER" psql -U postgres -d postgres -At \
+	-c "select tree_movement_paused::text || ':' || tree_movement_revision::text from public.profiles where id='30000000-0000-0000-0000-000000000001';")
+case "$SIDEY_TREE_STATE" in true:1|false:1) ;; *) exit 1 ;; esac
+grep -Fxq "$SIDEY_TREE_STATE" "$SIDEY_CONCURRENCY_TMP/tree-a.out"
+grep -Fxq "$SIDEY_TREE_STATE" "$SIDEY_CONCURRENCY_TMP/tree-b.out"
+
+printf 'Supabase concurrent checks passed: five rooms, twelve members, invite rate limit, tree preference CAS\n'

@@ -101,3 +101,9 @@ for each row execute function private.sidey_concurrency_pause_before_insert();
 create trigger sidey_concurrency_pause_invite_attempts
 before insert on private.invite_attempts
 for each row execute function private.sidey_concurrency_pause_before_insert();
+
+-- Delay after RPC's read and before the actual update to detect missing FOR
+-- UPDATE serialization when devices submit conflicting initial preferences.
+create trigger sidey_concurrency_pause_profiles
+before update of tree_movement_paused on public.profiles
+for each row execute function private.sidey_concurrency_pause_before_insert();
