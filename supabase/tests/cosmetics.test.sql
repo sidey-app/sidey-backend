@@ -15,8 +15,8 @@ select has_column('public', 'messages', 'bubble_style_id', 'message snapshots bu
 select is(
   (select amount_krw from public.commerce_prices
    where product_id = 'throwable_toy_cannon' and active),
-  2900,
-  'premium cannon costs 2,900 KRW including VAT'
+  3300,
+  'premium cannon costs 3,300 KRW including VAT'
 );
 select is(
   (select count(*)::integer from public.commerce_prices
@@ -52,7 +52,7 @@ select * from public.join_room((select invite_code from cosmetics_room));
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '71000000-0000-0000-0000-000000000001', true);
-select is((select count(*)::integer from public.get_store_state()), 24, 'store state returns the whole catalog');
+select is((select count(*)::integer from public.get_store_state()), 33, 'store state returns the whole catalog');
 select is(
   (select count(*)::integer from public.get_store_state() where is_equipped is null),
   0,

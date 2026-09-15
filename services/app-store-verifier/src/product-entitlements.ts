@@ -33,5 +33,14 @@ export const entitlementByProduct = Object.freeze({
   "throwable_clam": "throwable:throwable_clam",
   "throwable_pork_2": "throwable:throwable_pork",
   "throwable_pork": "throwable:throwable_pork",
-  "throwable_timber": "throwable:throwable_timber"
+  "throwable_timber": "throwable:throwable_timber",
+  "character_shiba": "character:pixel_shiba",
+  "throwable_tennis_ball": "throwable:throwable_tennis_ball",
+  "character_duck": "character:pixel_duck",
+  "character_poop": "character:pixel_poop",
+  "throwable_tissue_ball": "throwable:throwable_tissue_ball",
+  "character_tteokbokki": "character:pixel_tteokbokki",
+  "throwable_fish_cake_skewer": "throwable:throwable_fish_cake_skewer",
+  "character_quokka": "character:pixel_quokka",
+  "throwable_leaf": "throwable:throwable_leaf"
 } as const);
