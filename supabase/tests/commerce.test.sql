@@ -28,7 +28,7 @@ select results_eq(
       ('character_poop'::text, 1100),
       ('character_quokka'::text, 1100),
       ('character_shiba'::text, 1100),
-      ('character_starlight_upalupa'::text, 1100),
+      ('character_starlight_upalupa'::text, 2200),
       ('character_tree'::text, 1100),
       ('character_tteokbokki'::text, 1100),
       ('throwable_banana'::text, 1100),
@@ -104,7 +104,7 @@ select is((select google_connected from public.get_commerce_state()), true, 'Goo
 
 create temporary table commerce_test_order as
 select * from public.create_commerce_order('character_starlight_upalupa', repeat('a', 64));
-select is((select amount_krw from commerce_test_order), 1100, 'order copies active starlight price');
+select is((select amount_krw from commerce_test_order), 2200, 'order copies active starlight price');
 select is(
   (select octet_length(checkout_token_hash) from public.commerce_orders
    where id = (select order_id from commerce_test_order)),
@@ -131,19 +131,19 @@ select ok(
 
 select throws_ok(
   format($sql$select public.commerce_record_portone_state(
-    'bad-version','Transaction.Paid',repeat('b',64),%L,'store-1','channel-1','V1','TEST',1100,1100,'KRW','PAID','tx-1','EASY_PAY',now())$sql$,
+    'bad-version','Transaction.Paid',repeat('b',64),%L,'store-1','channel-1','V1','TEST',2200,2200,'KRW','PAID','tx-1','EASY_PAY',now())$sql$,
     (select provider_order_id from commerce_test_order)),
   '22023', 'portone_payment_environment_mismatch', 'non-V2 payment is rejected'
 );
 select throws_ok(
   format($sql$select public.commerce_record_portone_state(
-    'bad-env','Transaction.Paid',repeat('b',64),%L,'store-1','channel-1','V2','LIVE',1100,1100,'KRW','PAID','tx-1','EASY_PAY',now())$sql$,
+    'bad-env','Transaction.Paid',repeat('b',64),%L,'store-1','channel-1','V2','LIVE',2200,2200,'KRW','PAID','tx-1','EASY_PAY',now())$sql$,
     (select provider_order_id from commerce_test_order)),
   '22023', 'portone_payment_environment_mismatch', 'live channel is rejected in test environment'
 );
 select throws_ok(
   format($sql$select public.commerce_record_portone_state(
-    'bad-amount','Transaction.Paid',repeat('b',64),%L,'store-1','channel-1','V2','TEST',1101,1101,'KRW','PAID','tx-1','EASY_PAY',now())$sql$,
+    'bad-amount','Transaction.Paid',repeat('b',64),%L,'store-1','channel-1','V2','TEST',2201,2201,'KRW','PAID','tx-1','EASY_PAY',now())$sql$,
     (select provider_order_id from commerce_test_order)),
   '22023', 'commerce_amount_mismatch', 'amount mismatch is rejected'
 );
@@ -152,7 +152,7 @@ select is(
   public.commerce_record_portone_state(
     'paid-1','Transaction.Paid',repeat('c',64),
     (select provider_order_id from commerce_test_order),
-    'store-1','channel-1','V2','TEST',1100,1100,'KRW','PAID','tx-1','EASY_PAY',now()
+    'store-1','channel-1','V2','TEST',2200,2200,'KRW','PAID','tx-1','EASY_PAY',now()
   ),
   'approved', 'verified paid state approves order'
 );
@@ -167,7 +167,7 @@ select is(
   public.commerce_record_portone_state(
     'paid-1','Transaction.Paid',repeat('c',64),
     (select provider_order_id from commerce_test_order),
-    'store-1','channel-1','V2','TEST',1100,1100,'KRW','PAID','tx-1','EASY_PAY',now()
+    'store-1','channel-1','V2','TEST',2200,2200,'KRW','PAID','tx-1','EASY_PAY',now()
   ),
   'approved', 'duplicate event is idempotent'
 );
@@ -182,7 +182,7 @@ select is(
   public.commerce_record_portone_state(
     'refund-1','Transaction.Cancelled',repeat('d',64),
     (select provider_order_id from commerce_test_order),
-    'store-1','channel-1','V2','TEST',1100,0,'KRW','CANCELLED','tx-1','EASY_PAY',now()
+    'store-1','channel-1','V2','TEST',2200,0,'KRW','CANCELLED','tx-1','EASY_PAY',now()
   ),
   'refunded', 'verified full cancellation refunds order'
 );
@@ -197,7 +197,7 @@ select is(
   public.commerce_record_portone_state(
     'refund-1','Transaction.Cancelled',repeat('d',64),
     (select provider_order_id from commerce_test_order),
-    'store-1','channel-1','V2','TEST',1100,0,'KRW','CANCELLED','tx-1','EASY_PAY',now()
+    'store-1','channel-1','V2','TEST',2200,0,'KRW','CANCELLED','tx-1','EASY_PAY',now()
   ),
   'refunded', 'duplicate refund is idempotent'
 );
