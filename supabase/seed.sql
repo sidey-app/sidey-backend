@@ -1,0 +1,2 @@
+-- SIDEY intentionally has no persistent development users in seed data.
+-- SQL tests create transaction-scoped anonymous users and roll them back.

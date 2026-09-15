@@ -1,0 +1,268 @@
+{
+  "schema_version": 2,
+  "asset_version": "v1",
+  "approval": { "status": "approved", "approved_at": "2026-09-11" },
+  "licensing": {
+    "paid_asset_license": "../PAID_ASSET_LICENSE.md",
+    "paid_character_ids": [
+      "pixel_guinea_pig",
+      "pixel_monkey",
+      "pixel_chinchilla",
+      "pixel_starlight_upalupa",
+      "pixel_otter",
+      "pixel_pig",
+      "pixel_tree"
+    ],
+    "paid_throwable_ids": [
+      "mini_paprika",
+      "banana",
+      "dust_bath_pouch",
+      "starlight_orb",
+      "throwable_bouncy_heart",
+      "throwable_toy_cannon",
+      "throwable_squeaky_duck",
+      "clam",
+      "pork",
+      "timber",
+      "throwable_snowflake",
+      "throwable_baseball",
+      "throwable_wakkuball",
+      "throwable_dujjonku"
+    ],
+    "paid_bubble_ids": [
+      "bubble_bunny_pink",
+      "bubble_butter_chick",
+      "bubble_starry_cat"
+    ]
+  },
+  "format": {
+    "color_space": "sRGB",
+    "bit_depth": 8,
+    "color_type": "RGBA",
+    "alpha": "hard",
+    "background": "transparent",
+    "filtering": "nearest",
+    "runtime_shadows": false
+  },
+  "fallbacks": {
+    "character_id": "pixel_hamster",
+    "throwable_id": "patch_soft_ball"
+  },
+  "base_sheet": {
+    "cell_pixel_size": [24, 24],
+    "sheet_pixel_size": [240, 24],
+    "frame_count": 10,
+    "foot_baseline_pixels": 3,
+    "frames": { "idle": [0, 1], "walk": [2, 5], "doze": [6, 7], "offline": [8, 9] }
+  },
+  "throw_hit_sheet": {
+    "cell_pixel_size": [24, 24],
+    "sheet_pixel_size": [192, 24],
+    "frame_count": 8,
+    "foot_baseline_pixels": 3,
+    "frames": {
+      "throw_prepare": [0, 0],
+      "throw_exert": [1, 1],
+      "throw_release": [2, 2],
+      "throw_follow_through": [3, 3],
+      "hit_contact": [4, 4],
+      "hit_squash": [5, 5],
+      "hit_rebound": [6, 6],
+      "hit_recover": [7, 7]
+    }
+  },
+  "throwable_sheet": {
+    "cell_pixel_size": [16, 16],
+    "sheet_pixel_size": [192, 16],
+    "frame_count": 12,
+    "rotation_center_pixel": [7.5, 7.5],
+    "frames": {
+      "rotation": [0, 7],
+      "impact_contact": [8, 8],
+      "impact_squash": [9, 9],
+      "impact_bounce": [10, 10],
+      "impact_recover": [11, 11]
+    }
+  },
+  "cannon_emitter_sheet": {
+    "cell_pixel_size": [24, 24],
+    "sheet_pixel_size": [96, 24],
+    "frame_count": 4,
+    "frames": { "appear": [0, 0], "ready": [1, 1], "fire": [2, 2], "recoil": [3, 3] }
+  },
+  "bubble_decoration": {
+    "pixel_size": [16, 16],
+    "preview_pixel_size": [128, 48],
+    "text_font": "AppleSDGothicNeo-Medium",
+    "message_font_size_pt": 10.5
+  },
+  "reference": {
+    "path": "reference/pixel_hamster_reference.png",
+    "scale": 8,
+    "sha256": "3798d4d3abe2ffbaf7685483905bd6e6ebaa02ad77d6bf38a29862164b785ec3"
+  },
+  "characters": [
+    {
+      "id": "pixel_hamster",
+      "display_name": "아기 햄스터",
+      "supported_platforms": ["macos", "windows", "checkout"],
+      "macos_directory": "PixelHamster", "web_directory": "characters",
+      "base": { "path": "characters/pixel_hamster/base.png", "sha256": "43171c1dd614629058b6d593c57ca0e5841b0be03a04a05181dfda67c53a7f45" },
+      "throw_hit": { "path": "characters/pixel_hamster/throw_hit.png", "sha256": "b9915afdbb5476b17ea7b7f0a06eea09cc20b96dd1995328bdae2f806c3285c8" },
+      "throwable_id": "patch_soft_ball",
+      "renderer_effects": []
+    },
+    {
+      "id": "pixel_cat",
+      "display_name": "아기 고양이",
+      "supported_platforms": ["macos", "windows", "checkout"],
+      "macos_directory": "PixelCat", "web_directory": "characters",
+      "base": { "path": "characters/pixel_cat/base.png", "sha256": "d8b370c03b5cf0ede6aa0d9fa6210030e164b015a920622e89ae86f835e018b2" },
+      "throw_hit": { "path": "characters/pixel_cat/throw_hit.png", "sha256": "128e020aab718d8d45e81f599c221467b46f27aa809c45b1d873580cdaffcc62" },
+      "throwable_id": "patch_soft_ball",
+      "renderer_effects": []
+    },
+    {
+      "id": "pixel_puppy",
+      "display_name": "복실 강아지",
+      "supported_platforms": ["macos", "windows", "checkout"],
+      "macos_directory": "PixelPuppy", "web_directory": "characters",
+      "base": { "path": "characters/pixel_puppy/base.png", "sha256": "8f56a5fda51a224802f41d6d1c359a138c83036b7da3e0a35777f9f4ed38d5f7" },
+      "throw_hit": { "path": "characters/pixel_puppy/throw_hit.png", "sha256": "38d2858c97b456be17f34fd6b93df862e9c0d3b72e5592bb0e625e64110c5744" },
+      "throwable_id": "patch_soft_ball",
+      "renderer_effects": []
+    },
+    {
+      "id": "pixel_rabbit",
+      "display_name": "아기 토끼",
+      "supported_platforms": ["macos", "windows", "checkout"],
+      "macos_directory": "PixelRabbit", "web_directory": "characters",
+      "base": { "path": "characters/pixel_rabbit/base.png", "sha256": "f8e53749200a284f7729ea9baac3237a9fac0caf8efedf9102dcee065e521342" },
+      "throw_hit": { "path": "characters/pixel_rabbit/throw_hit.png", "sha256": "f641ebbba64e8c23d33173ff04d4907d3e15955024dd72e3f6e7d9b3e20fec84" },
+      "throwable_id": "patch_soft_ball",
+      "renderer_effects": []
+    },
+    {
+      "id": "pixel_penguin",
+      "display_name": "꼬마 펭귄",
+      "supported_platforms": ["macos", "windows", "checkout"],
+      "macos_directory": "PixelPenguin", "web_directory": "characters",
+      "base": { "path": "characters/pixel_penguin/base.png", "sha256": "f171503f8ffb938732583a4b6f42443e7a69120bb17496f6e8d34372da2ea886" },
+      "throw_hit": { "path": "characters/pixel_penguin/throw_hit.png", "sha256": "7ee5ea2b90994400a1b4dd252ed2affb095416597422a8ef4cb0ae54b3fb7f77" },
+      "throwable_id": "patch_soft_ball",
+      "renderer_effects": []
+    },
+    {
+      "id": "pixel_guinea_pig",
+      "display_name": "아기 기니피그",
+      "supported_platforms": ["macos", "windows", "checkout"],
+      "macos_directory": "PixelGuineaPig", "web_directory": "store",
+      "base": { "path": "characters/pixel_guinea_pig/base.png", "sha256": "1a0bf85dae86f2e6bb460e8b0b852c2bd010d5ff6f7efd1477cbd6986da64f5b" },
+      "throw_hit": { "path": "characters/pixel_guinea_pig/throw_hit.png", "sha256": "384157773baa55bd4a5f8586d179ab7eb43f42fb4204c306490784551e38ae1d" },
+      "throwable_id": "mini_paprika",
+      "renderer_effects": []
+    },
+    {
+      "id": "pixel_monkey",
+      "display_name": "아기 원숭이",
+      "supported_platforms": ["macos", "windows", "checkout"],
+      "macos_directory": "PixelMonkey", "web_directory": "store",
+      "base": { "path": "characters/pixel_monkey/base.png", "sha256": "515fe377f5344dd4cbaa2b0faf58de3ce72fdc62be5aff6a9d9de683983c783b" },
+      "throw_hit": { "path": "characters/pixel_monkey/throw_hit.png", "sha256": "059a288dde75695febec8a42303dc63f126636b094e3896b795b6a4ac1cce39a" },
+      "throwable_id": "banana",
+      "renderer_effects": []
+    },
+    {
+      "id": "pixel_chinchilla",
+      "display_name": "아기 친칠라",
+      "supported_platforms": ["macos", "windows", "checkout"],
+      "macos_directory": "PixelChinchilla", "web_directory": "store", "additional_base_mirrors": ["website/public/assets/characters/pixel_chinchilla.png"],
+      "base": { "path": "characters/pixel_chinchilla/base.png", "sha256": "c0009e007a7a63029fb58ad6f94d2b9a8c9ae7a55f139dd4892050f11614c5d4" },
+      "throw_hit": { "path": "characters/pixel_chinchilla/throw_hit.png", "sha256": "a6dd2b4f1837812bc9fd0d979fe379c4362ed8018b9d5e6991e5c28d53265b02" },
+      "throwable_id": "dust_bath_pouch",
+      "renderer_effects": []
+    },
+    {
+      "id": "pixel_starlight_upalupa",
+      "display_name": "별빛 우파루파",
+      "supported_platforms": ["macos", "windows", "checkout"],
+      "macos_directory": "PixelStarlightUpalupa", "web_directory": "store", "additional_base_mirrors": ["website/public/assets/characters/pixel_starlight_upalupa.png"],
+      "base": { "path": "characters/pixel_starlight_upalupa/base.png", "sha256": "d180810a8796280077f3f70f6da681888c583c2f8d74776d0f5d300e943a079a" },
+      "throw_hit": { "path": "characters/pixel_starlight_upalupa/throw_hit.png", "sha256": "7a9bae8b1359f432857e026c972e3bc99777539ce7cfff89bc01e95d1938de75" },
+      "throwable_id": "starlight_orb",
+      "renderer_effects": ["ambient_sparkle", "pulse_particle_burst"]
+    },
+    {"id": "pixel_otter", "display_name": "아기 수달", "supported_platforms": ["macos", "windows", "checkout"], "macos_directory": "PixelOtter", "web_directory": "store", "base": {"path": "characters/pixel_otter/base.png", "sha256": "38ebed0f4588e4f776df44872c2e81e96d70056fb8c97b19c812433584e4b5db"}, "throw_hit": {"path": "characters/pixel_otter/throw_hit.png", "sha256": "ad7d076f4c63910c2c97f6e6ed03c27b47642a825d002d64b8c9dc86c11c2716"}, "throwable_id": "clam", "renderer_effects": []},
+    {"id": "pixel_pig", "display_name": "아기 돼지", "supported_platforms": ["macos", "windows", "checkout"], "macos_directory": "PixelPig", "web_directory": "store", "base": {"path": "characters/pixel_pig/base.png", "sha256": "b383c07699cc40fe21c05f18aaf21730888685f9b0874a16b95cd82bebcd6f98"}, "throw_hit": {"path": "characters/pixel_pig/throw_hit.png", "sha256": "045344ec128ed34cfe2e6a641cf90c1a04b3ac639045dc200bc996c0089da85b"}, "throwable_id": "pork", "renderer_effects": []},
+    {"id": "pixel_tree", "display_name": "나무", "supported_platforms": ["macos", "windows", "checkout"], "macos_directory": "PixelTree", "web_directory": "store", "base": {"path": "characters/pixel_tree/base.png", "sha256": "ddf40aa115034c2c4fb3046673f6e20d2ca208d0b5a9ffa5737fb79c2e6cc97f"}, "throw_hit": {"path": "characters/pixel_tree/throw_hit.png", "sha256": "af22b750129b813d0affd8fa572604837f6bf67acfa14bda68074abf45a11f15"}, "throwable_id": "timber", "renderer_effects": []}
+  ],
+  "throwables": [
+    { "id": "patch_soft_ball", "display_name": "패치 말랑공", "supported_platforms": ["macos", "windows", "checkout"], "web_directory": "previewer", "sprite": { "path": "throwables/patch_soft_ball/sprite.png", "sha256": "cdde7f417c5d8d82d0f4df6b03fa8e7d494d98a37d75aa66699505d7c87c53fe" } },
+    { "id": "mini_paprika", "display_name": "미니 파프리카", "supported_platforms": ["macos", "windows", "checkout"], "web_directory": "store", "sprite": { "path": "throwables/mini_paprika/sprite.png", "sha256": "85b8d0525a865e531882a736561e9b7c4fbb6a2c3f80d91b456c4c4a7425724d" } },
+    { "id": "banana", "display_name": "바나나", "supported_platforms": ["macos", "windows", "checkout"], "web_directory": "store", "sprite": { "path": "throwables/banana/sprite.png", "sha256": "9cfca454ff6305fdd374c08f64c3c21e3af278166ffe15f7f81a183bb214f138" } },
+    { "id": "dust_bath_pouch", "display_name": "먼지목욕 모래주머니", "supported_platforms": ["macos", "windows", "checkout"], "web_directory": "store", "sprite": { "path": "throwables/dust_bath_pouch/sprite.png", "sha256": "b68022f5fe1a1a6a57fe56a01f73bae3d14b27d76f2dcbf10c6686b979634a65" } },
+    { "id": "starlight_orb", "display_name": "별빛 구슬", "supported_platforms": ["macos", "windows", "checkout"], "web_directory": "store", "sprite": { "path": "throwables/starlight_orb/sprite.png", "sha256": "08cf8ec8dc680ae07dcd83de9d56948873445470c6b15b5ad22e770f4277984c" } },
+    { "id": "throwable_bouncy_heart", "display_name": "통통 하트", "supported_platforms": ["macos", "windows", "checkout"], "web_directory": "store", "sprite": { "path": "throwables/throwable_bouncy_heart/sprite.png", "sha256": "8474458c5d810a598c16a7f74bbfecf65300d7fb2c55aaaf0cabfa0399945305" } },
+    { "id": "throwable_toy_cannon", "display_name": "미니 대포", "supported_platforms": ["macos", "windows", "checkout"], "web_directory": "store", "sprite": { "path": "throwables/throwable_toy_cannon/sprite.png", "sha256": "c42c472f216ec4d291a41562dfaf6a28204625133961a5a225198daf87459bef" }, "emitter": { "path": "throwables/throwable_toy_cannon/emitter.png", "sha256": "7869a47c2f72a17894646e2f63eab1166b42d13f2a72fa83311075b3d809ffbf" }, "preview": { "path": "throwables/throwable_toy_cannon/preview.png", "sha256": "e8382b1f90a9651fd2367c695eeb20edba7c70552cc79a49c539d3f35e521f3f" } },
+    { "id": "throwable_squeaky_duck", "display_name": "삑삑 오리", "supported_platforms": ["macos", "windows", "checkout"], "web_directory": "store", "sprite": { "path": "throwables/throwable_squeaky_duck/sprite.png", "sha256": "3b6935398d41b6d1cd5efa922392dbf4864782deb9880c5d0f10885e00906e7a" } },
+    {"id": "clam", "display_name": "조개", "supported_platforms": ["macos", "windows", "checkout"], "web_directory": "store", "sprite": {"path": "throwables/clam/sprite.png", "sha256": "561832b15538e3f57b0b6381e967130f21ba1a0aaf74110019588ff90da874e0"}},
+    {"id": "pork", "display_name": "돼지고기", "supported_platforms": ["macos", "windows", "checkout"], "web_directory": "store", "sprite": {"path": "throwables/pork/sprite.png", "sha256": "0a7acc60184321e05f7e0e04aed8972651331e50960aa18243b4958d27fd4da6"}},
+    {"id": "timber", "display_name": "작은 나무", "supported_platforms": ["macos", "windows", "checkout"], "web_directory": "store", "sprite": {"path": "throwables/timber/sprite.png", "sha256": "21280bb2ac9f9df4332552281fcba6fc1efdaf27b933eb058bf625a30221b63b"}},
+    {"id": "throwable_snowflake", "display_name": "눈송이", "supported_platforms": ["macos", "windows", "checkout"], "web_directory": "store", "sprite": {"path": "throwables/throwable_snowflake/sprite.png", "sha256": "35ede7107f668d193c272773441215427da267e1f27b2beaab47d8c88ae37cd2"}},
+    {"id": "throwable_baseball", "display_name": "야구공", "supported_platforms": ["macos", "windows", "checkout"], "web_directory": "store", "sprite": {"path": "throwables/throwable_baseball/sprite.png", "sha256": "73f3dc8d86a9f8f76f07494df5ee48a8ff5380feec55a718eed8aad6940b94e5"}},
+    {"id": "throwable_wakkuball", "display_name": "왁뿌볼", "supported_platforms": ["macos", "windows", "checkout"], "web_directory": "store", "sprite": {"path": "throwables/throwable_wakkuball/sprite.png", "sha256": "4627c3538efcdaae3deda1ee390fbac92f96cf6e199dceb58a60f7917b7de295"}},
+    {"id": "throwable_dujjonku", "display_name": "두쫀쿠", "supported_platforms": ["macos", "windows", "checkout"], "web_directory": "store", "sprite": {"path": "throwables/throwable_dujjonku/sprite.png", "sha256": "bb2468a5a9f3a692c294c7546c2b20cd4bfdfc903e6779304b2bfeccaea50b32"}}
+  ],
+  "bubbles": [
+    { "id": "bubble_bunny_pink", "display_name": "핑크 토끼 말풍선", "supported_platforms": ["macos", "windows", "checkout"], "background_color": "#F7A9B8", "text_color": "#1C1F29", "contrast_ratio": 8.86, "decoration": { "path": "bubbles/bubble_bunny_pink/decoration.png", "sha256": "3013d02224fe98befdc18f065f706c98cc412ab30c77a6a6c83723fc3366d117" }, "preview": { "path": "bubbles/bubble_bunny_pink/preview.png", "sha256": "6bc038ab0f234223164d22194db95a055a46bb9384e491a4e6930d7e66615c43" } },
+    { "id": "bubble_butter_chick", "display_name": "버터 병아리 말풍선", "supported_platforms": ["macos", "windows", "checkout"], "background_color": "#FFE38A", "text_color": "#1C1F29", "contrast_ratio": 13.0, "decoration": { "path": "bubbles/bubble_butter_chick/decoration.png", "sha256": "4444b4bb579f0eaa322123e927078b3ad837ddba8fc5dea4cab5ab5bf2a39e56" }, "preview": { "path": "bubbles/bubble_butter_chick/preview.png", "sha256": "e3653d581d00bbf250dc3b12579d9ff9722d2b9756586fd58b4fe3a761345ea6" } },
+    { "id": "bubble_starry_cat", "display_name": "별밤 고양이 말풍선", "supported_platforms": ["macos", "windows", "checkout"], "background_color": "#403A78", "text_color": "#FFF7E8", "contrast_ratio": 9.42, "decoration": { "path": "bubbles/bubble_starry_cat/decoration.png", "sha256": "da374fdafad2bfa1f9968ea0e438e1cad1391e72dbf84c2c408174b33ff04515" }, "preview": { "path": "bubbles/bubble_starry_cat/preview.png", "sha256": "8ff382321c24e3485d11344a6d3dcfed3bc601c37a36f96d6f0dacfc60f32d83" } }
+  ],
+  "mirrors": {
+    "policy": "generated_distribution_copy_do_not_edit",
+    "bgra_row_order": {
+      "character_base": "top_down",
+      "throw_hit": "bottom_up",
+      "throwable": "bottom_up",
+      "bubble_decoration": "top_down",
+      "cannon_emitter": "bottom_up"
+    },
+    "character_base_png": [
+      "macos/SIDEY/Resources/Characters/{macos_directory}/{id}.png",
+      "windows/src/Sidey.Overlay/Assets/Characters/{id}/base.png",
+      "website/public/assets/{web_directory}/{id}.png"
+    ],
+    "character_base_bgra": ["windows/src/Sidey.Overlay/Assets/Characters/{id}/base.bgra"],
+    "throw_hit_png": [
+      "macos/SIDEY/Resources/CharacterThrow/ActionSheets/{id}_throw_hit.png",
+      "windows/src/Sidey.Overlay/Assets/Characters/{id}/throw_hit.png"
+    ],
+    "throw_hit_bgra": ["windows/src/Sidey.Overlay/Assets/Characters/{id}/throw_hit.bgra"],
+    "throwable_png": [
+      "macos/SIDEY/Resources/CharacterThrow/ObjectSheets/{id}.png",
+      "windows/src/Sidey.Overlay/Assets/Throwables/{id}/sprite.png",
+      "website/public/assets/{web_directory}/{id}.png"
+    ],
+    "throwable_bgra": ["windows/src/Sidey.Overlay/Assets/Throwables/{id}/sprite.bgra"],
+    "bubble_decoration_png": [
+      "macos/SIDEY/Resources/Bubbles/{id}.png",
+      "windows/src/Sidey.Overlay/Assets/Bubbles/{id}/decoration.png"
+    ],
+    "bubble_decoration_bgra": ["windows/src/Sidey.Overlay/Assets/Bubbles/{id}/decoration.bgra"],
+    "bubble_preview_png": [
+      "windows/src/Sidey.Overlay/Assets/Bubbles/{id}/preview.png",
+      "website/public/assets/cosmetics/{id}.png"
+    ],
+    "cannon_emitter_png": [
+      "macos/SIDEY/Resources/CharacterThrow/EmitterSheets/{id}_emitter.png",
+      "windows/src/Sidey.Overlay/Assets/Throwables/{id}/emitter.png",
+      "website/public/assets/cosmetics/{id}_emitter.png"
+    ],
+    "cannon_emitter_bgra": ["windows/src/Sidey.Overlay/Assets/Throwables/{id}/emitter.bgra"],
+    "cannon_preview_png": ["windows/src/Sidey.Overlay/Assets/Throwables/{id}/preview.png"],
+    "previewer_defaults": {
+      "pixel_hamster_throw_hit": "website/public/assets/previewer/pixel_hamster_throw_hit.png",
+      "patch_soft_ball": "website/public/assets/previewer/patch_soft_ball.png"
+    }
+  }
+}
