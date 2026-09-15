@@ -64,3 +64,27 @@ GitHub download collector는 정식 Release만 읽고 `SIDEY-macOS-arm64-v<versi
 - 서버: 실제 anon/authenticated role의 RLS, 12번째 성공·13번째 거부와 여섯 번째 방 경합, 병렬 초대 제한, invite hash API 비노출, current epoch topic 권한, client Broadcast INSERT 봉쇄, transient event whitelist·rate, `broadcast_character_throw`의 인증·epoch·양쪽 membership·자기 대상·필수 UUID·20회/10초 제한과 서버 source character, 메시지 멱등성·rate, 3일 retention, 비방장 관리 거부와 cascade를 SQL 테스트한다.
 
 서버 자동 검증은 이 저장소의 Supabase reset·pgTAP·동시 트랜잭션 테스트가 담당한다. 클라이언트 재접속·렌더링 검증은 공개 SIDEY 저장소에서 계속 수행한다.
+
+## 나무 이동 상태 공유
+
+`profiles.tree_movement_paused`는 계정 단위 boolean(기본 false),
+`tree_movement_revision`은 bigint(기본 0)다. revision 0은 기존 로컬 설정의
+서버 이관이 아직 이뤄지지 않았음을 뜻한다. macOS·Windows는 본인과 방 멤버의
+기존 profiles snapshot 조회에 두 필드를 포함하고, 더 낮은 revision의 응답은 무시한다.
+
+`set_tree_movement_paused(p_paused boolean, p_expected_revision bigint)`는 로그인한
+본인 profile을 `FOR UPDATE`로 잠근 뒤 `SETOF profiles`로 정확히 한 행을 반환한다.
+PostgREST 응답은 profile 객체 하나를 담은 배열이다. 기대 revision이
+현재값과 다르면 현재 행을 변경 없이 반환한다. 최초 초기화는 false를 저장해도
+0 → 1로 진행한다. 이후 같은 상태는 revision을 유지하고, 다른 상태는 1 증가한다.
+이 계약으로 응답을 잃은 재시도와 동시 기기의 설정 이관이 최신 설정을 덮어쓰지 않는다.
+클라이언트는 저장 중 중복 요청을 막고, 오류에는 기존 상태를 유지하며, 충돌 응답에는
+서버 확정값을 적용한다. 재실행·방 이동·다중 기기에서 초기화 후 로컬 설정을 재이관하지 않는다.
+
+RPC는 캐릭터 선택과 별개인 계정 설정이며 다른 캐릭터를 선택해도 상태를 보존한다.
+미인증은 `authentication_required`, profile 부재는 `profile_required`, null 상태·null 또는
+음수 revision은 `invalid_tree_movement_state`로 실패한다. 기존 profiles SELECT RLS가
+본인과 방 멤버에게만 상태를 공개하며 직접 INSERT/UPDATE는 허용하지 않는다.
+기존 `profiles_broadcast_change`의 방별 `structure_changed` 알림과 snapshot 재조회를
+재사용한다. 미리보기 정지는 로컬 상태로 유지한다. migration 파일 추가만으로 운영에
+반영되지 않으며 사용자 간 공유는 후속 backend 배포와 클라이언트 업데이트 뒤 제공된다.
