@@ -91,9 +91,9 @@ RPC는 캐릭터 선택과 별개인 계정 설정이며 다른 캐릭터를 선
 
 ## 콘텐츠·가격 통일 준비
 
-공개 main에 통합된 원본은 `57ac0ff65824103c19b62f2da31391e2d341a7d6`이며
+공개 main에 통합된 원본은 `96f62abc0b350791de8e0d7c3b3af33f4e73dae6`이며
 `SOURCE.json`의 `catalogSourceCommit`과 `catalogSnapshotSha256`에 고정한다.
-검토된 PR 원본과 두 snapshot의 바이트·SHA-256이 동일함을 확인했다.
+우파루파 2,200원 정정이 통합된 이 커밋에서 두 snapshot을 가져와 바이트·SHA-256을 기록했다.
 공개 main 통합은 운영 backend 배포를 실행하지 않는다.
 
 `20260915200000_content_catalog_and_prices.sql`은 시바견·오리·똥·떡볶이·쿼카와
@@ -102,9 +102,14 @@ RPC는 캐릭터 선택과 별개인 계정 설정이며 다른 캐릭터를 선
 기존 Apple 판매·복원 offer 34개는 기존 포함 물건 의미를 보존하고 신규 offer 9개는
 `includes_related_throwable=false`다. 상품 33개·Apple ID 43개가 된다.
 
-새 주문 가격은 말풍선 3종·두쫀쿠·왁뿌볼 2,200원, 미니 대포 3,300원,
-나무·별빛 우파루파·신규 9개를 포함한 나머지 상품 1,100원이다. 기존 price 행은
+2026-09-16 정정 후 새 주문 가격은 별빛 우파루파·말풍선 3종·두쫀쿠·왁뿌볼 2,200원,
+미니 대포 3,300원, 나무·신규 9개를 포함한 나머지 상품 1,100원이다. 기존 price 행은
 비활성화하고 새 행을 추가한다. 기존 주문의 가격 참조·금액·정책, 결제·Apple 거래
 금액·지급·복원 이력은 변경하지 않는다. Apple 화면 가격은 Apple의 현지 가격이므로
 운영 가격 조정과 App Store 상품 등록·공개는 별도 출시 작업이다.
 이 migration과 verifier mirror 반영은 운영 DB 적용이나 서비스 배포가 아니다.
+
+`20260916000000_starlight_upalupa_price.sql`은 우파루파의 활성 1,100원 가격을
+퇴역시키고 2,200원 가격을 추가한다. 기존 migration은 수정하지 않으며 대기 중인
+1,100원 주문과 더 오래된 1,900원 주문도 원래 금액으로 처리한다. 별빛 구슬은 별도
+1,100원 상품이다. [Cloud Console·App Store 등록 인계](CONTENT_RELEASE_HANDOFF.md)를 따른다.

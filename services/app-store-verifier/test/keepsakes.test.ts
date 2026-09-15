@@ -21,7 +21,7 @@ test('current catalog has 33 products, 43 Apple offers and twelve independent ke
   assert.equal(products.filter((p: any) => p.related_character_product_id).length, 12);
   for (const product of products) {
     const expectedPrice = product.id === 'throwable_toy_cannon' ? 3300
-      : product.kind === 'bubble' || ['throwable_dujjonku','throwable_wakkuball'].includes(product.id) ? 2200 : 1100;
+      : product.kind === 'bubble' || ['character_starlight_upalupa','throwable_dujjonku','throwable_wakkuball'].includes(product.id) ? 2200 : 1100;
     assert.equal(product.direct_price, expectedPrice, product.id);
     assert.equal(product.app_store_price, expectedPrice, product.id);
   }
@@ -131,6 +131,44 @@ test('actual commerce SQL preserves legacy sources, restores old offers and isol
       assert.deepEqual((await db.query('select amount_krw,active from commerce_prices where id=$1',[oldPrice.id])).rows,
         [{amount_krw:oldPrice.amount_krw,active:false}]);
     }
+    // Correcting the upalupa price must preserve both older 1900 KRW orders and
+    // pending 1100 KRW orders, signed Apple money, grants, offers and other prices.
+    const pendingOrder = '65000000-0000-0000-0000-000000000002';
+    await db.query(`insert into commerce_orders(id,provider_order_id,user_id,product_id,price_id,amount_krw,currency,
+      checkout_token_hash,checkout_token_expires_at)
+      select $1::uuid,$1::text,$2::uuid,'character_starlight_upalupa',id,amount_krw,'KRW',
+        decode(repeat('e',64),'hex'),now()+interval '1 day'
+      from commerce_prices where product_id='character_starlight_upalupa' and active`,[pendingOrder,user]);
+    const oldUpalupaPrice = (await db.query<any>(`select * from commerce_prices
+      where product_id='character_starlight_upalupa' and active`)).rows[0];
+    assert.equal(oldUpalupaPrice.amount_krw,1100);
+    await db.query(`select * from admin_apply_app_store_transaction($1,'upalupa-before-correction','upalupa-before-correction',
+      'character_starlight_upalupa_solo',$1,'Sandbox','active','2026-09-15',null,'2026-09-16',repeat('b',64))`,[user]);
+    await db.exec(`update private.app_store_transactions set price_milliunits=1100000,currency='KRW',price_signed_at='2026-09-16'
+      where transaction_id='upalupa-before-correction'`);
+    const preservedQueries = [
+      ...historyTables.map(table => `select to_jsonb(t) as row from ${table} t order by to_jsonb(t)::text`),
+      ...['commerce_entitlements','private.app_store_product_offers','profiles'].map(
+        table => `select to_jsonb(t) as row from ${table} t order by to_jsonb(t)::text`),
+      "select to_jsonb(t) as row from commerce_prices t where product_id<>'character_starlight_upalupa' order by id",
+    ];
+    const beforeCorrection = await Promise.all(preservedQueries.map(sql => db.query(sql)));
+    const correction = await read('supabase/migrations/20260916000000_starlight_upalupa_price.sql');
+    await db.exec(correction);
+    for (const [index,sql] of preservedQueries.entries()) {
+      assert.deepEqual((await db.query(sql)).rows,beforeCorrection[index]!.rows,sql);
+    }
+    const retiredUpalupaPrice = (await db.query<any>('select * from commerce_prices where id=$1',[oldUpalupaPrice.id])).rows[0];
+    assert.ok(retiredUpalupaPrice.retired_at);
+    assert.deepEqual({...retiredUpalupaPrice,active:true,retired_at:null},oldUpalupaPrice);
+    assert.deepEqual((await db.query(`select amount_krw,currency,tax_inclusive from commerce_prices
+      where product_id='character_starlight_upalupa' and active`)).rows,
+      [{amount_krw:2200,currency:'KRW',tax_inclusive:true}]);
+    assert.equal((await db.query<any>('select amount_krw from commerce_orders where id=$1',[pendingOrder])).rows[0].amount_krw,1100);
+    const pricesAfterCorrection = await db.query('select to_jsonb(t) as row from commerce_prices t order by id');
+    await db.exec(correction);
+    assert.deepEqual((await db.query('select to_jsonb(t) as row from commerce_prices t order by id')).rows,
+      pricesAfterCorrection.rows,'replaying the correction does not retire or duplicate the 2200 KRW price');
     const allOffers = (await db.query<any>('select * from private.app_store_product_offers order by store_product_id')).rows;
     assert.equal(allOffers.length,43);
     for (const offer of oldOffers) assert.deepEqual(allOffers.find(current => current.store_product_id===offer.store_product_id),offer);

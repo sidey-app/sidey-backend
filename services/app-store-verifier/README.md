@@ -47,7 +47,7 @@ for SIDEY_SERVICE in sidey-app-store-verifier-sandbox sidey-app-store-verifier-p
 done
 ```
 
-배포할 소스는 `character_monkey_solo_4`를 포함한 현재·과거 Apple 상품 ID 34개를 검증한다. DB에는 `20260912130000_monkey_fourth_app_store_offer.sql`까지 필요한 migration이 적용되어 있어야 한다. Cloud Run 배포는 Supabase migration을 실행하지 않는다. `/health` 성공은 프로세스 생존 확인이며 실제 구매·복원·환불 검증을 대신하지 않는다.
+배포할 소스는 `character_monkey_solo_4`를 포함한 현재·과거 Apple 상품 ID 43개를 검증한다. DB에는 `20260916000000_starlight_upalupa_price.sql`까지 필요한 migration이 적용되어 있어야 한다. 현재 상품은 33개이며 별빛 우파루파 기준 가격은 2,200원이다. 신규 9개 등록과 적용 순서는 [콘텐츠 출시 인계](../../docs/CONTENT_RELEASE_HANDOFF.md)를 따른다. Cloud Run 배포는 Supabase migration을 실행하지 않는다. `/health` 성공은 프로세스 생존 확인이며 실제 구매·복원·환불 검증을 대신하지 않는다.
 
 비공개 소스를 clone하기 전에 해당 조직 저장소에 접근 가능한 `gh` 인증이 필요하다. 배포 환경의 기존 시크릿과 설정을 보존한다.
 
