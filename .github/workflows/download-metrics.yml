@@ -1,0 +1,36 @@
+name: Download metrics
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: download-metrics
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    # Enable only after the public collector is disabled and ingest secrets are migrated.
+    if: vars.DOWNLOAD_METRICS_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Verify asset classification and public source
+        run: node --test scripts/download-metrics/*.test.mjs
+      - name: Record stable public installation asset counters
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DOWNLOAD_METRICS_RELEASE_REPOSITORY: sidey-app/SIDEY
+          DOWNLOAD_METRICS_INGEST_URL: ${{ secrets.DOWNLOAD_METRICS_INGEST_URL }}
+          DOWNLOAD_METRICS_INGEST_KEY: ${{ secrets.DOWNLOAD_METRICS_INGEST_KEY }}
+        run: node scripts/download-metrics/collect.mjs
