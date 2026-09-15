@@ -1,7 +1,7 @@
 begin;
 
--- Reviewed public catalog source: 55a103cfc5ebc021f9ba1270d9f704cc1e76f3d0.
--- Source SHA and snapshot hashes are recorded in SOURCE.json; main integration is separate.
+-- Reviewed public catalog source: 57ac0ff65824103c19b62f2da31391e2d341a7d6.
+-- Source SHA and snapshot hashes are recorded in SOURCE.json; production deployment is separate.
 -- No order, payment, Apple transaction or entitlement history is rewritten.
 insert into public.commerce_products (id, display_name, product_description, character_id, entitlement_key, product_kind, catalog_item_id, sort_order, related_character_product_id, render_asset_id)
 values ('character_shiba', '시바견', '산책은 다녀왔어요. 시바는 그 사실을 인정하지 않아요.', 'pixel_shiba', 'character:pixel_shiba', 'character', 'pixel_shiba', 80, null, null)

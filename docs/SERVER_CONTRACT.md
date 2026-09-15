@@ -91,9 +91,10 @@ RPC는 캐릭터 선택과 별개인 계정 설정이며 다른 캐릭터를 선
 
 ## 콘텐츠·가격 통일 준비
 
-공개 검토 원본은 `55a103cfc5ebc021f9ba1270d9f704cc1e76f3d0`이며
+공개 main에 통합된 원본은 `57ac0ff65824103c19b62f2da31391e2d341a7d6`이며
 `SOURCE.json`의 `catalogSourceCommit`과 `catalogSnapshotSha256`에 고정한다.
-원본 PR의 main 통합과 운영 배포는 별도다.
+검토된 PR 원본과 두 snapshot의 바이트·SHA-256이 동일함을 확인했다.
+공개 main 통합은 운영 backend 배포를 실행하지 않는다.
 
 `20260915200000_content_catalog_and_prices.sql`은 시바견·오리·똥·떡볶이·쿼카와
 테니스공·휴지 뭉치·어묵꼬치·잎사귀를 독립 상품으로 추가한다. 삑삑 오리는 기존
