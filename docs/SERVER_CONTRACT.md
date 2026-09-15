@@ -42,7 +42,7 @@ forward-only `20260905000000_cosmetics_catalog_and_equipment.sql`은 상품을 `
 
 forward-only `20260905010000_settings_retention_contract.sql`은 미니 대포의 기존 3,900원 가격 이력을 보존·비활성화하고 2,900원 활성 가격을 추가한다. `set_equipped_cosmetic(text, text default null)`로 기본 꾸미기 복귀의 생략·명시적 null 호출을 함께 지원하고 PostgREST schema cache를 갱신한다. 메시지 보관 함수는 3일 기준으로 교체하며 적용 즉시 기존 3일 초과 메시지를 영구 삭제한다. 변경된 방마다 기존 `messages_pruned` invalidation event 하나만 발행하는 계약은 유지한다.
 
-기존 `send_message(p_id,p_room_id,p_body)`와 `broadcast_character_throw(p_room_id,p_realtime_epoch,p_event_id,p_target_user_id)` 인자는 바꾸지 않는다. `send_message`는 최초 insert에서 서버가 확인한 말풍선 스타일을 snapshot하고 같은 UUID 재시도는 저장된 행을 그대로 반환한다. throw RPC는 기존 인증·membership·epoch·rate limit 검증 뒤 서버가 확인한 장착 투척물만 optional `throwable_id`로 추가한다. 미장착·미소유·알 수 없는 값은 기존 캐릭터 시그니처로 fallback한다. App Store transaction 원장은 상품 원본에서 생성한 현재 판매 및 과거 복원용 Apple ID만 받는다.
+기존 `send_message(p_id,p_room_id,p_body)`와 `broadcast_character_throw(p_room_id,p_realtime_epoch,p_event_id,p_target_user_id)` 인자는 바꾸지 않는다. `send_message`는 최초 insert에서 서버가 확인한 말풍선 스타일을 snapshot하고 같은 UUID 재시도는 저장된 행을 그대로 반환한다. throw RPC는 기존 인증·membership·epoch·rate limit 검증 뒤 서버가 확인한 장착 투척물만 optional `throwable_id`로 추가한다. 현행 `20260912000000_character_keepsakes.sql` 이후 미장착·미소유·알 수 없는 값은 모든 캐릭터에서 `patch_soft_ball`로 fallback한다. App Store transaction 원장은 상품 원본에서 생성한 현재 판매 및 과거 복원용 Apple ID만 받는다.
 
 `services/app-store-verifier`는 Apple 공식 Node App Store Server Library로 기기 JWS와 Server Notifications V2를 검증하고 App Store Server API에서 transaction을 다시 조회한다. Production과 Sandbox 서비스·키를 분리하며 bundle ID, app Apple ID, product ID, environment와 서명을 모두 확인한다. 계정 삭제 endpoint는 새 Sign in with Apple token의 subject를 현재 Supabase Apple identity와 비교하고 Apple token 철회 뒤 Auth 사용자를 삭제한다.
 
@@ -88,3 +88,22 @@ RPC는 캐릭터 선택과 별개인 계정 설정이며 다른 캐릭터를 선
 기존 `profiles_broadcast_change`의 방별 `structure_changed` 알림과 snapshot 재조회를
 재사용한다. 미리보기 정지는 로컬 상태로 유지한다. migration 파일 추가만으로 운영에
 반영되지 않으며 사용자 간 공유는 후속 backend 배포와 클라이언트 업데이트 뒤 제공된다.
+
+## 콘텐츠·가격 통일 준비
+
+공개 검토 원본은 `55a103cfc5ebc021f9ba1270d9f704cc1e76f3d0`이며
+`SOURCE.json`의 `catalogSourceCommit`과 `catalogSnapshotSha256`에 고정한다.
+원본 PR의 main 통합과 운영 배포는 별도다.
+
+`20260915200000_content_catalog_and_prices.sql`은 시바견·오리·똥·떡볶이·쿼카와
+테니스공·휴지 뭉치·어묵꼬치·잎사귀를 독립 상품으로 추가한다. 삑삑 오리는 기존
+`throwable_squeaky_duck` 상품·소유권을 재사용하며 오리 캐릭터 구매로 자동 지급하지 않는다.
+기존 Apple 판매·복원 offer 34개는 기존 포함 물건 의미를 보존하고 신규 offer 9개는
+`includes_related_throwable=false`다. 상품 33개·Apple ID 43개가 된다.
+
+새 주문 가격은 말풍선 3종·두쫀쿠·왁뿌볼 2,200원, 미니 대포 3,300원,
+나무·별빛 우파루파·신규 9개를 포함한 나머지 상품 1,100원이다. 기존 price 행은
+비활성화하고 새 행을 추가한다. 기존 주문의 가격 참조·금액·정책, 결제·Apple 거래
+금액·지급·복원 이력은 변경하지 않는다. Apple 화면 가격은 Apple의 현지 가격이므로
+운영 가격 조정과 App Store 상품 등록·공개는 별도 출시 작업이다.
+이 migration과 verifier mirror 반영은 운영 DB 적용이나 서비스 배포가 아니다.

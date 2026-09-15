@@ -23,5 +23,14 @@ export const SUPPORTED_PRODUCT_IDS = new Set([
   "throwable_starlight_orb",
   "throwable_clam",
   "throwable_pork",
-  "throwable_timber"
+  "throwable_timber",
+  "character_shiba",
+  "throwable_tennis_ball",
+  "character_duck",
+  "character_poop",
+  "throwable_tissue_ball",
+  "character_tteokbokki",
+  "throwable_fish_cake_skewer",
+  "character_quokka",
+  "throwable_leaf"
 ]);

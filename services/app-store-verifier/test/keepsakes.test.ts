@@ -15,10 +15,16 @@ function fn(sql: string, name: string) {
   assert.ok(start >= 0, name);
   return sql.slice(start, sql.indexOf('$$;', start) + 3);
 }
-test('current catalog has 24 products, 34 Apple offers and seven independent keepsakes', async () => {
+test('current catalog has 33 products, 43 Apple offers and twelve independent keepsakes', async () => {
   const products = JSON.parse(await read('assets/v1/commerce-catalog.json'));
-  assert.equal(products.length, 24);
-  assert.equal(products.filter((p: any) => p.related_character_product_id).length, 7);
+  assert.equal(products.length, 33);
+  assert.equal(products.filter((p: any) => p.related_character_product_id).length, 12);
+  for (const product of products) {
+    const expectedPrice = product.id === 'throwable_toy_cannon' ? 3300
+      : product.kind === 'bubble' || ['throwable_dujjonku','throwable_wakkuball'].includes(product.id) ? 2200 : 1100;
+    assert.equal(product.direct_price, expectedPrice, product.id);
+    assert.equal(product.app_store_price, expectedPrice, product.id);
+  }
   const offers = Object.fromEntries(products.flatMap((p: any) =>
     [p.app_store_product_id, ...p.legacy_app_store_product_ids].map(id => [id, p.entitlement])));
   assert.deepEqual(entitlementByProduct, offers);
@@ -90,21 +96,50 @@ test('actual commerce SQL preserves legacy sources, restores old offers and isol
     await db.exec(await read('supabase/migrations/20260912123000_restore_monkey_second_app_store_offer.sql')); // safe replay
     await db.exec(await read('supabase/migrations/20260912130000_monkey_fourth_app_store_offer.sql'));
     await db.exec(await read('supabase/migrations/20260912130000_monkey_fourth_app_store_offer.sql')); // safe replay
+    // Capture already-created orders, Apple transaction rows and grants before
+    // the forward migration. Historic money and inclusion are immutable.
+    const historicalOrder = '65000000-0000-0000-0000-000000000001';
+    await db.query(`insert into commerce_orders(id,provider_order_id,user_id,product_id,price_id,amount_krw,currency,
+      checkout_token_hash,checkout_token_expires_at)
+      select $1::uuid,$1::text,$2::uuid,'character_starlight_upalupa',id,amount_krw,'KRW',
+        decode(repeat('f',64),'hex'),now()+interval '1 day'
+      from commerce_prices where product_id='character_starlight_upalupa' and active`,[historicalOrder,user]);
+    await db.query(`select * from admin_apply_app_store_transaction($1,'historical-apple','historical-apple',
+      'character_tree',$1,'Sandbox','active','2026-09-01',null,'2026-09-13',repeat('a',64))`,[user]);
+    // Use the actual monetary column/constraint DDL without the independent
+    // reporting RPC fixture; these values must survive a catalog price change.
+    const moneyMigration = await read('supabase/migrations/20260915000000_admin_app_store_revenue.sql');
+    await db.exec(moneyMigration.slice(moneyMigration.indexOf('alter table private.app_store_transactions'),moneyMigration.indexOf('create index')));
+    await db.exec(`update private.app_store_transactions set price_milliunits=1900000,currency='KRW',price_signed_at='2026-09-13'
+      where transaction_id='historical-apple';
+      create table private.commerce_runtime_settings (sales_enabled boolean);
+      insert into private.commerce_runtime_settings values(false);`);
+    const historyTables = ['commerce_orders','private.app_store_transactions','private.commerce_grants','private.commerce_runtime_settings'];
+    const historyBefore = await Promise.all(historyTables.map(table => db.query(`select to_jsonb(t) as row from ${table} t order by to_jsonb(t)::text`)));
+    const retiredPriceIDs = (await db.query<any>('select id,amount_krw from commerce_prices where active')).rows;
+    const oldOffers = (await db.query<any>('select * from private.app_store_product_offers order by store_product_id')).rows;
+    await db.exec(await read('supabase/migrations/20260915200000_content_catalog_and_prices.sql'));
+    const priceCount = (await db.query('select * from commerce_prices')).rows.length;
+    await db.exec(await read('supabase/migrations/20260915200000_content_catalog_and_prices.sql')); // safe replay
+    assert.equal((await db.query('select * from commerce_prices')).rows.length, priceCount);
+    for (const [index,table] of historyTables.entries()) {
+      assert.deepEqual((await db.query(`select to_jsonb(t) as row from ${table} t order by to_jsonb(t)::text`)).rows,
+        historyBefore[index]!.rows, `migration preserves ${table} rows byte-for-byte`);
+    }
+    assert.equal((await db.query<any>('select amount_krw from commerce_orders where id=$1',[historicalOrder])).rows[0].amount_krw,1900);
+    for (const oldPrice of retiredPriceIDs) {
+      assert.deepEqual((await db.query('select amount_krw,active from commerce_prices where id=$1',[oldPrice.id])).rows,
+        [{amount_krw:oldPrice.amount_krw,active:false}]);
+    }
+    const allOffers = (await db.query<any>('select * from private.app_store_product_offers order by store_product_id')).rows;
+    assert.equal(allOffers.length,43);
+    for (const offer of oldOffers) assert.deepEqual(allOffers.find(current => current.store_product_id===offer.store_product_id),offer);
     const owned = async (key: string, uid = user) => (await db.query<any>(
       'select status from commerce_entitlements where user_id=$1 and entitlement_key=$2',[uid,key])).rows[0]?.status;
     assert.equal(await owned('throwable:throwable_banana'),'active');
     assert.equal((await db.query<any>('select equipped_throwable_id from profiles where id=$1',[user])).rows[0].equipped_throwable_id,'throwable_banana');
-    assert.equal((await db.query('select * from get_store_state()')).rows.length,24);
-    assert.equal((await db.query('select * from private.app_store_product_offers')).rows.length,34);
-    const catalog = JSON.parse(await read('assets/v1/commerce-catalog.json'));
-    for (const product of catalog) {
-      const row = (await db.query<any>('select * from get_store_state() where product_id=$1',[product.id])).rows[0];
-      assert.equal(row.product_description,product.description);
-      assert.equal(row.amount_krw,product.direct_price);
-      assert.equal(row.app_store_product_id,product.app_store_product_id);
-      assert.equal(row.render_asset_id,product.render_asset_id);
-      assert.equal(row.sort_order,product.sort_order);
-    }
+    assert.equal((await db.query('select * from get_store_state()')).rows.length,33);
+    assert.equal((await db.query('select * from private.app_store_product_offers')).rows.length,43);
     await assert.rejects(db.query("select set_equipped_cosmetic('throwable','throwable_clam')"), /cosmetic_ownership_required/);
     // Reprocessing a parent does not duplicate the derived grant.
     await db.exec("update private.commerce_grants set updated_at=now() where source_reference='existing-gift'");
@@ -119,6 +154,31 @@ test('actual commerce SQL preserves legacy sources, restores old offers and isol
     const apply = async (tx: string, offer: string, status='active', uid=other, signed='2026-09-13') => db.query(
       `select * from admin_apply_app_store_transaction($1,$2,$2,$3,$1,'Sandbox',$4,'2026-09-01',
         case when $4='active' then null else '2026-09-13'::timestamptz end,$5,repeat('a',64))`,[uid,tx,offer,status,signed]);
+    // All five new characters require their own entitlement and never include
+    // the independently sold keepsake, including the reused squeaky duck ID.
+    for (const [character,item] of [
+      ['shiba','tennis_ball'], ['duck','squeaky_duck'], ['poop','tissue_ball'],
+      ['tteokbokki','fish_cake_skewer'], ['quokka','leaf']
+    ]) {
+      await db.exec(`select set_config('test.user','${other}',false)`);
+      await assert.rejects(db.query("select upsert_profile('친구',$1)",[`pixel_${character}`]),/character_ownership_required/);
+      await apply(`new-character-${character}`,`character_${character}`);
+      await db.query("select upsert_profile('친구',$1)",[`pixel_${character}`]);
+      assert.equal(await owned(`throwable:throwable_${item}`,other),undefined);
+      await assert.rejects(db.query("select set_equipped_cosmetic('throwable',$1)",[`throwable_${item}`]),/cosmetic_ownership_required/);
+      await apply(`new-item-${item}`,`throwable_${item}`);
+      await apply(`new-item-${item}`,`throwable_${item}`); // Apple replay must not duplicate grants
+      await db.query("select set_equipped_cosmetic('throwable',$1)",[`throwable_${item}`]);
+      await apply(`new-character-${character}`,`character_${character}`,'refunded');
+      assert.equal(await owned(`throwable:throwable_${item}`,other),'active');
+      await assert.rejects(db.query("select upsert_profile('친구',$1)",[`pixel_${character}`]),/character_ownership_required/);
+      await apply(`new-item-${item}`,`throwable_${item}`,'refunded');
+      assert.equal((await db.query<any>('select equipped_throwable_id from profiles where id=$1',[other])).rows[0].equipped_throwable_id,null);
+      const grants = (await db.query<any>(`select count(*)::int as count from private.commerce_grants
+        where source_kind='app_store' and source_reference=$1`,[`transaction:new-item-${item}`])).rows[0].count;
+      assert.equal(grants,1,'reused squeaky duck has exactly one independent purchase grant');
+    }
+    await db.exec(`select set_config('test.user','${user}',false)`);
     // Old and new tree offers grant the same character, never its separate keepsake.
     await apply('tree-old','character_tree');
     await apply('tree-new','character_tree_2');
@@ -210,6 +270,20 @@ test('actual commerce SQL preserves legacy sources, restores old offers and isol
     await db.query("update profiles set equipped_throwable_id='throwable_pork' where id=$1",[other]);
     await broadcast();
     assert.equal((await lastEvent()).payload.throwable_id,'patch_soft_ball');
+    // Every active throwable must traverse owned equipment -> render asset ->
+    // the private event. The catalog relationship never changes the fallback.
+    const throwables = (await db.query<any>("select id,catalog_item_id,render_asset_id from commerce_products where product_kind='throwable' and active order by id")).rows;
+    assert.equal(throwables.length,18);
+    await db.query('delete from private.realtime_event_attempts');
+    for (const item of throwables) {
+      await apply(`throw-path-${item.id}`,item.id);
+      await db.query("select set_equipped_cosmetic('throwable',$1)",[item.catalog_item_id]);
+      await broadcast();
+      assert.equal((await lastEvent()).payload.throwable_id,item.render_asset_id,item.id);
+    }
+    await db.query("select set_equipped_cosmetic('throwable',null)");
+    await broadcast();
+    assert.equal((await lastEvent()).payload.throwable_id,'patch_soft_ball');
     await assert.rejects(broadcast(0),/stale_realtime_epoch/);
     await assert.rejects(broadcast(1,other),/self_target_forbidden/);
     await db.query('delete from room_members where user_id=$1',[other]);
@@ -217,5 +291,17 @@ test('actual commerce SQL preserves legacy sources, restores old offers and isol
     await db.exec("select set_config('test.user','',false)");
     await assert.rejects(db.query('select * from get_store_state()'),/authentication_required/);
     assert.equal((await db.query<any>("select has_table_privilege('authenticated','private.app_store_product_offers','INSERT') as allowed")).rows[0].allowed,false);
+    // Compare the independently migrated rows with the reviewed public snapshot
+    // after verifying behavior, so an unimported source cannot hide SQL failures.
+    await db.exec(`select set_config('test.user','${user}',false)`);
+    const catalog = JSON.parse(await read('assets/v1/commerce-catalog.json'));
+    for (const product of catalog) {
+      const row = (await db.query<any>('select * from get_store_state() where product_id=$1',[product.id])).rows[0];
+      assert.equal(row.product_description,product.description);
+      assert.equal(row.amount_krw,product.direct_price);
+      assert.equal(row.app_store_product_id,product.app_store_product_id);
+      assert.equal(row.render_asset_id,product.render_asset_id);
+      assert.equal(row.sort_order,product.sort_order);
+    }
   } finally { await db.close(); }
 });

@@ -12,34 +12,43 @@ select has_table('public', 'commerce_orders', 'commerce orders exist');
 select has_table('public', 'commerce_entitlements', 'commerce entitlements exist');
 select has_column('public', 'commerce_entitlements', 'grant_kind', 'grant kind records provenance');
 select has_column('public', 'commerce_entitlements', 'grant_reference', 'grant reference records provenance');
-select is((select count(*)::integer from public.commerce_products where active), 24, 'twenty-four catalog products are active');
+select is((select count(*)::integer from public.commerce_products where active), 33, 'thirty-three catalog products are active');
 select results_eq(
   $$select product_id, amount_krw from public.commerce_prices where active order by product_id$$,
   $$values
-      ('bubble_bunny_pink'::text, 1900),
-      ('bubble_butter_chick'::text, 1900),
-      ('bubble_starry_cat'::text, 1900),
-      ('character_chinchilla'::text, 990),
-      ('character_guinea_pig'::text, 990),
-      ('character_monkey'::text, 990),
-      ('character_otter'::text, 990),
-      ('character_pig'::text, 990),
-      ('character_starlight_upalupa'::text, 1900),
-      ('character_tree'::text, 1900),
-      ('throwable_banana'::text, 990),
-      ('throwable_baseball'::text, 990),
-      ('throwable_bouncy_heart'::text, 990),
-      ('throwable_clam'::text, 990),
-      ('throwable_dujjonku'::text, 1900),
-      ('throwable_dust_bath_pouch'::text, 990),
-      ('throwable_mini_paprika'::text, 990),
-      ('throwable_pork'::text, 990),
-      ('throwable_snowflake'::text, 990),
-      ('throwable_squeaky_duck'::text, 990),
-      ('throwable_starlight_orb'::text, 990),
-      ('throwable_timber'::text, 990),
-      ('throwable_toy_cannon'::text, 2900),
-      ('throwable_wakkuball'::text, 1900)$$,
+      ('bubble_bunny_pink'::text, 2200),
+      ('bubble_butter_chick'::text, 2200),
+      ('bubble_starry_cat'::text, 2200),
+      ('character_chinchilla'::text, 1100),
+      ('character_duck'::text, 1100),
+      ('character_guinea_pig'::text, 1100),
+      ('character_monkey'::text, 1100),
+      ('character_otter'::text, 1100),
+      ('character_pig'::text, 1100),
+      ('character_poop'::text, 1100),
+      ('character_quokka'::text, 1100),
+      ('character_shiba'::text, 1100),
+      ('character_starlight_upalupa'::text, 1100),
+      ('character_tree'::text, 1100),
+      ('character_tteokbokki'::text, 1100),
+      ('throwable_banana'::text, 1100),
+      ('throwable_baseball'::text, 1100),
+      ('throwable_bouncy_heart'::text, 1100),
+      ('throwable_clam'::text, 1100),
+      ('throwable_dujjonku'::text, 2200),
+      ('throwable_dust_bath_pouch'::text, 1100),
+      ('throwable_fish_cake_skewer'::text, 1100),
+      ('throwable_leaf'::text, 1100),
+      ('throwable_mini_paprika'::text, 1100),
+      ('throwable_pork'::text, 1100),
+      ('throwable_snowflake'::text, 1100),
+      ('throwable_squeaky_duck'::text, 1100),
+      ('throwable_starlight_orb'::text, 1100),
+      ('throwable_tennis_ball'::text, 1100),
+      ('throwable_timber'::text, 1100),
+      ('throwable_tissue_ball'::text, 1100),
+      ('throwable_toy_cannon'::text, 3300),
+      ('throwable_wakkuball'::text, 2200)$$,
   'active prices are server-owned'
 );
 select is(
@@ -95,7 +104,7 @@ select is((select google_connected from public.get_commerce_state()), true, 'Goo
 
 create temporary table commerce_test_order as
 select * from public.create_commerce_order('character_starlight_upalupa', repeat('a', 64));
-select is((select amount_krw from commerce_test_order), 1900, 'order copies active starlight price');
+select is((select amount_krw from commerce_test_order), 1100, 'order copies active starlight price');
 select is(
   (select octet_length(checkout_token_hash) from public.commerce_orders
    where id = (select order_id from commerce_test_order)),
@@ -122,19 +131,19 @@ select ok(
 
 select throws_ok(
   format($sql$select public.commerce_record_portone_state(
-    'bad-version','Transaction.Paid',repeat('b',64),%L,'store-1','channel-1','V1','TEST',1900,1900,'KRW','PAID','tx-1','EASY_PAY',now())$sql$,
+    'bad-version','Transaction.Paid',repeat('b',64),%L,'store-1','channel-1','V1','TEST',1100,1100,'KRW','PAID','tx-1','EASY_PAY',now())$sql$,
     (select provider_order_id from commerce_test_order)),
   '22023', 'portone_payment_environment_mismatch', 'non-V2 payment is rejected'
 );
 select throws_ok(
   format($sql$select public.commerce_record_portone_state(
-    'bad-env','Transaction.Paid',repeat('b',64),%L,'store-1','channel-1','V2','LIVE',1900,1900,'KRW','PAID','tx-1','EASY_PAY',now())$sql$,
+    'bad-env','Transaction.Paid',repeat('b',64),%L,'store-1','channel-1','V2','LIVE',1100,1100,'KRW','PAID','tx-1','EASY_PAY',now())$sql$,
     (select provider_order_id from commerce_test_order)),
   '22023', 'portone_payment_environment_mismatch', 'live channel is rejected in test environment'
 );
 select throws_ok(
   format($sql$select public.commerce_record_portone_state(
-    'bad-amount','Transaction.Paid',repeat('b',64),%L,'store-1','channel-1','V2','TEST',1901,1901,'KRW','PAID','tx-1','EASY_PAY',now())$sql$,
+    'bad-amount','Transaction.Paid',repeat('b',64),%L,'store-1','channel-1','V2','TEST',1101,1101,'KRW','PAID','tx-1','EASY_PAY',now())$sql$,
     (select provider_order_id from commerce_test_order)),
   '22023', 'commerce_amount_mismatch', 'amount mismatch is rejected'
 );
@@ -143,7 +152,7 @@ select is(
   public.commerce_record_portone_state(
     'paid-1','Transaction.Paid',repeat('c',64),
     (select provider_order_id from commerce_test_order),
-    'store-1','channel-1','V2','TEST',1900,1900,'KRW','PAID','tx-1','EASY_PAY',now()
+    'store-1','channel-1','V2','TEST',1100,1100,'KRW','PAID','tx-1','EASY_PAY',now()
   ),
   'approved', 'verified paid state approves order'
 );
@@ -158,7 +167,7 @@ select is(
   public.commerce_record_portone_state(
     'paid-1','Transaction.Paid',repeat('c',64),
     (select provider_order_id from commerce_test_order),
-    'store-1','channel-1','V2','TEST',1900,1900,'KRW','PAID','tx-1','EASY_PAY',now()
+    'store-1','channel-1','V2','TEST',1100,1100,'KRW','PAID','tx-1','EASY_PAY',now()
   ),
   'approved', 'duplicate event is idempotent'
 );
@@ -173,7 +182,7 @@ select is(
   public.commerce_record_portone_state(
     'refund-1','Transaction.Cancelled',repeat('d',64),
     (select provider_order_id from commerce_test_order),
-    'store-1','channel-1','V2','TEST',1900,0,'KRW','CANCELLED','tx-1','EASY_PAY',now()
+    'store-1','channel-1','V2','TEST',1100,0,'KRW','CANCELLED','tx-1','EASY_PAY',now()
   ),
   'refunded', 'verified full cancellation refunds order'
 );
@@ -188,7 +197,7 @@ select is(
   public.commerce_record_portone_state(
     'refund-1','Transaction.Cancelled',repeat('d',64),
     (select provider_order_id from commerce_test_order),
-    'store-1','channel-1','V2','TEST',1900,0,'KRW','CANCELLED','tx-1','EASY_PAY',now()
+    'store-1','channel-1','V2','TEST',1100,0,'KRW','CANCELLED','tx-1','EASY_PAY',now()
   ),
   'refunded', 'duplicate refund is idempotent'
 );

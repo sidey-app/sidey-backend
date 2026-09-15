@@ -93,6 +93,10 @@
     "assets/v1/commerce-catalog.json",
     "assets/v1/manifest.json"
   ],
-  "catalogSourceCommit": "0cfe9af6ad546d529a3495eff692f1d2c5e0a074",
-  "validatedMainCommit": "59c9ccc295b1334bc9a6c52356be7121bb873774"
+  "catalogSourceCommit": "55a103cfc5ebc021f9ba1270d9f704cc1e76f3d0",
+  "validatedMainCommit": "59c9ccc295b1334bc9a6c52356be7121bb873774",
+  "catalogSnapshotSha256": {
+    "assets/v1/commerce-catalog.json": "7c54ef45a9b22599b49327c343bfda6dbe3357504f8a46e03037e85e9d68a6d2",
+    "assets/v1/manifest.json": "0b43ebf068279c44e8f312d502aca36ed749baebd3da34d4978310c91bd33f17"
+  }
 }
