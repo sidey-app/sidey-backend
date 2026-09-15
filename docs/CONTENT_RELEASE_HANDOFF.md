@@ -97,8 +97,13 @@ supabase functions deploy commerce-order commerce-checkout commerce-complete com
 ## 4. App Store Connect
 
 앱 `app.sidey.desktop.appstore`의 In-App Purchases에 다음 **비소모성** 상품을
-등록한다. 각 상품의 한국 가격은 1,100원이며, 이름·설명은 고정된 공개 카탈로그와
-번역 파일을 사용한다. 판매 국가·지역, 심사용 스크린샷·메모와 공개 시점을 확인한 뒤
+등록한다. 각 상품의 한국 가격은 1,100원이다. 한국어 등록 문구는 공개 저장소의
+`macos/docs/APP_STORE_PRODUCT_REGISTRATION.md`와 로컬 StoreKit 설정을 따른다.
+Apple 표시명은 2~30자, 설명은 45자 이하이므로 `character_poop`의 표시명은
+**똥 캐릭터**로 입력한다. 앱·웹 이름과 Product ID는 그대로다. 웹의 긴 번역 설명을
+Connect에 그대로 붙이지 않는다. [Apple 등록 규격](https://developer.apple.com/help/app-store-connect/reference/in-app-purchases-and-subscriptions/in-app-purchase-information)
+
+판매 국가·지역, 심사용 스크린샷·메모와 공개 시점을 확인한 뒤
 사용자가 등록·제출한다. [Apple 상품 생성 안내](https://developer.apple.com/help/app-store-connect/manage-in-app-purchases/create-consumable-or-non-consumable-in-app-purchases)
 
 | 상품 | 현재 판매 Product ID |
