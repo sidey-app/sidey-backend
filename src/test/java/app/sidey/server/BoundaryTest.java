@@ -20,7 +20,7 @@ class BoundaryTest {
         }
         assertEquals(1000,count.get());assertEquals(0,locks.size());
     }
-    @Test void commitUpdateFailureInvalidatesAndRollbackDoesNotPublish() {
+    @Test void commitUpdateFailureAndUncertainTransactionOutcomeBothInvalidate() {
         var boundary=new RoomMembershipBoundary();UUID id=UUID.randomUUID();var invalid=new AtomicInteger();
         boundary.observe(new RoomMembershipBoundary.Observer(){
             public void committed(UUID room){throw new IllegalStateException("simulated_update_failure");}
@@ -28,6 +28,6 @@ class BoundaryTest {
         });
         assertEquals("committed",boundary.mutate(id,()->"committed"));assertEquals(1,invalid.get());
         assertThrows(IllegalStateException.class,()->boundary.mutate(id,()->{throw new IllegalStateException("rollback");}));
-        assertEquals(1,invalid.get());assertEquals(0,boundary.lockCount());
+        assertEquals(2,invalid.get());assertEquals(0,boundary.lockCount());
     }
 }

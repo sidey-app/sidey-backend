@@ -34,6 +34,11 @@ public final class RoomMembershipBoundary {
                 catch(RuntimeException failed) { observer.invalidate(id); }
             }
             return result;
+        } catch(RuntimeException failed) {
+            // An after-commit listener may throw even though PostgreSQL committed.
+            // Treat uncertain outcomes as cache misses, never as retained authority.
+            for(UUID id:ordered)for(Observer observer:observers)try{observer.invalidate(id);}catch(RuntimeException invalidation){failed.addSuppressed(invalidation);}
+            throw failed;
         } finally {
             Collections.reverse(leases);
             for(var lease:leases) lease.close();

@@ -27,6 +27,7 @@ public class MembershipRegistry implements RoomMembershipBoundary.Observer {
     public Set<UUID> snapshot(UUID room) {
         return access(room,null,Function.identity());
     }
+    public Set<UUID> roomsForUser(UUID user){return Set.copyOf(db.fetch("select room_id from room_members where user_id=?",user).getValues(0,UUID.class));}
     public <T> T recipients(UUID room,Function<Set<UUID>,T> snapshotFn) {
         return access(room,null,snapshotFn);
     }

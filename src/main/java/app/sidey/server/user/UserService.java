@@ -17,10 +17,11 @@ public class UserService {
     private final CoordinationLocks coordination;
     private final RoomMembershipBoundary rooms;
     private final AuthService auth;
+    private final ApplicationEventPublisher events;
 
     public UserService(DSLContext db, Transactions tx, CoordinationLocks coordination,
             RoomMembershipBoundary rooms, AuthService auth, ApplicationEventPublisher events) {
-        this.db=db; this.tx=tx; this.coordination=coordination; this.rooms=rooms; this.auth=auth;
+        this.db=db; this.tx=tx; this.coordination=coordination; this.rooms=rooms; this.auth=auth;this.events=events;
     }
 
     public void delete(UUID user) {
@@ -54,6 +55,7 @@ public class UserService {
                         +"updated_at=now() where user_id=?",user);
                 db.execute("update app_store_transactions set user_id=null,binding_state='unbound',updated_at=now() where user_id=?",user);
                 db.execute("delete from users where id=?",user);
+                affected.forEach(room->events.publishEvent(new app.sidey.server.common.StructureChanged(room,user)));
                 return null;
             }));
         });

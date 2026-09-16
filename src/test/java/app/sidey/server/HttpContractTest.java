@@ -21,5 +21,9 @@ class HttpContractTest {
         var protectedResponse=client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+"/api/rooms"))
                 .GET().build(),HttpResponse.BodyHandlers.ofString());
         assertEquals(401,protectedResponse.statusCode());
+        var oversized=client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+"/api/auth/login")).header("Content-Type","application/json")
+                .POST(HttpRequest.BodyPublishers.ofString("x".repeat(262145))).build(),HttpResponse.BodyHandlers.ofString());assertEquals(413,oversized.statusCode());
+        var ops=client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+"/internal/commerce/refund")).header("Content-Type","application/json")
+                .POST(HttpRequest.BodyPublishers.ofString("{}")).build(),HttpResponse.BodyHandlers.ofString());assertEquals(401,ops.statusCode());assertTrue(ops.body().contains("operations_authentication_required"));
     }
 }

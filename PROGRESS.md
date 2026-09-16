@@ -62,5 +62,14 @@ unsigned JWS rejection. Provider HTTP has bounded body/deadline tests. Real Appl
 API/JWS/OCSP/revocation success remains credential-dependent. Corrected tests to
 use a historical bundled guinea-pig offer; the current pig offer is solo.
 
-Remaining: phases 13–19. Production provider calls require deployment credentials;
+Phase 13 complete: `./mvnw -q clean verify` passed 68 tests with zero failures,
+errors or skips. Actual PostgreSQL schema/codegen, concurrency, migration,
+HTTP/WS, provider contracts and cryptographic rejection tests ran. Source
+guardrails and diff checks passed. Fixed uncertain after-commit cache authority,
+offline-user profile publication, account-deletion room hints, connection capacity
+race, request-body bounds and blocking socket timeout. Added session-expiry revoke.
+Backend contract is ready for client migration. Existing reference repositories
+remain unchanged (their pre-existing untracked exporter files are preserved).
+
+Remaining: phases 14–19. Production provider calls require deployment credentials;
 local provider contracts use deterministic test doubles.

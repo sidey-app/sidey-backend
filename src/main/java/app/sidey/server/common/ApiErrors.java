@@ -7,6 +7,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class ApiErrors {
+    @ExceptionHandler(Exception.class)
+    ResponseEntity<Map<String,String>> unexpected(Exception error){
+        org.slf4j.LoggerFactory.getLogger(ApiErrors.class).error("request_failed exceptionType={}",error.getClass().getSimpleName());
+        return ResponseEntity.internalServerError().body(Map.of("code","internal_error"));
+    }
     @ExceptionHandler(ApiException.class)
     ResponseEntity<Map<String, String>> domain(ApiException error) {
         return ResponseEntity.status(error.status()).body(Map.of("code", error.code()));

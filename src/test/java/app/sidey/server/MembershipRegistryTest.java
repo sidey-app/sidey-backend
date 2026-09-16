@@ -11,6 +11,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 class MembershipRegistryTest extends PostgresTest {
+    @Test void exceptionAfterCommittedTransactionAlsoInvalidatesAuthority(){
+        var f=new CoreFixture(db,tx);UUID owner=f.user(),member=f.user();var room=f.rooms.create(owner,"불확실방");f.rooms.join(member,room.inviteCode());
+        var registry=new MembershipRegistry(db,f.boundary);registry.require(room.room().id(),member);
+        assertThrows(IllegalStateException.class,()->f.boundary.mutate(room.room().id(),()->{
+            f.tx.run(()->{db.execute("delete from room_members where room_id=? and user_id=?",room.room().id(),member);return null;});
+            throw new IllegalStateException("after_commit_listener_failure");
+        }));
+        assertEquals(0,registry.size());assertThrows(ApiException.class,()->registry.require(room.room().id(),member));assertEquals(0,f.boundary.lockCount());
+    }
     @Test void committedObserverFailureInvalidatesAndNextAccessRecoversFromDatabase() {
         UUID room=UUID.randomUUID(),owner=UUID.randomUUID(),member=UUID.randomUUID();
         tx.executeWithoutResult(status->{
