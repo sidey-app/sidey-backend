@@ -34,5 +34,13 @@ per-user transient rate windows. `./mvnw -q verify`: 50 tests passed; source
 guardrails and diff check passed. Corrected earlier profile/message lookup using
 `bubble_style` where the catalog domain kind is `bubble`; snapshot retry tested.
 
-Remaining: phases 10–19. Production provider calls require deployment credentials;
+Phase 10 complete: offline streaming JDBC importer, atomic validation/report,
+UUID/provider/anonymous mapping, retained messages, full commerce audit/source
+ledger and Apple bindings, parent grants and historical cutover preservation.
+Same run UUID returns its committed report; failed validation rolls back all data.
+`./mvnw -q verify`: 51 tests passed including a real PostgreSQL legacy-shaped
+fixture, intentional projection failure/rollback and successful rerun. Source
+guardrails, shell syntax and diff check passed. Production import is not run.
+
+Remaining: phases 11–19. Production provider calls require deployment credentials;
 local provider contracts use deterministic test doubles.
