@@ -29,11 +29,23 @@ class CommerceTest extends PostgresTest {
     }
     @Test void checkoutAndProviderTruthAreRequiredBeforeOwnership(){
         var s=new Setup();var order=s.create();var p=s.paid(order);
+        assertEquals("https://example.test/checkout/#token="+order.checkoutToken(),order.checkoutUrl());
+        var prepared=s.service.checkout(order.checkoutToken(),false,null);
+        assertEquals(order.orderId(),prepared.get("orderId"));
+        assertEquals("character_tree",prepared.get("productId"));
+        assertEquals(p.total(),((Number)prepared.get("amount")).longValue());
+        assertEquals("KRW",prepared.get("currency"));
+        assertEquals(true,prepared.get("requiresConsent"));
+        assertFalse(prepared.containsKey("channelKey"));
         var catalog=s.service.catalog(s.user);
         assertTrue(catalog.stream().allMatch(row->row.get("tax_inclusive") instanceof Boolean));
         assertTrue(catalog.stream().allMatch(row->row.get("product_description") instanceof String));
         assertThrows(ApiException.class,()->s.service.complete(order.checkoutToken(),p.id()));assertTrue(s.service.entitlements(s.user).isEmpty());
-        assertThrows(ApiException.class,()->s.service.checkout(order.checkoutToken(),true,"forged-policy"));s.consent(order);
+        assertThrows(ApiException.class,()->s.service.checkout(order.checkoutToken(),true,"forged-policy"));
+        var authorized=s.service.checkout(order.checkoutToken(),true,"v1");
+        assertEquals("https://example.test/checkout-result/#token="+order.checkoutToken(),authorized.get("redirectUrl"));
+        assertEquals("CURRENCY_KRW",authorized.get("portoneCurrency"));
+        assertEquals(p.id(),authorized.get("paymentId"));
         assertThrows(ApiException.class,()->s.service.complete(Crypto.token(),p.id()));
         List<PaymentProvider.Payment> forged=List.of(
             new PaymentProvider.Payment(p.id(),"PAID",p.storeId(),p.channelKey(),p.channelType(),"V1",null,p.total(),0,"KRW",p.method()),
