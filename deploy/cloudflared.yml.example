@@ -1,0 +1,6 @@
+# Merge this ingress rule into the existing named tunnel, before its final 404.
+# Keep existing tunnel identity/credential settings in their secret store.
+ingress:
+  - hostname: api.sidey.app
+    service: http://127.0.0.1:8088
+  - service: http_status:404

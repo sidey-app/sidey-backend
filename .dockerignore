@@ -1,0 +1,5 @@
+**
+!deploy/
+!deploy/Containerfile
+!target/
+!target/sidey-server-0.1.0-SNAPSHOT.jar

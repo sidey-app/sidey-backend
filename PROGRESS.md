@@ -71,5 +71,50 @@ race, request-body bounds and blocking socket timeout. Added session-expiry revo
 Backend contract is ready for client migration. Existing reference repositories
 remain unchanged (their pre-existing untracked exporter files are preserved).
 
-Remaining: phases 14–19. Production provider calls require deployment credentials;
-local provider contracts use deterministic test doubles.
+Phase 14 complete: macOS migration in `macos/spring-backend-macos`, commit
+42e652e. Replaced SDK/auth/transport with SIDEY sessions, provider login, secure
+legacy claim, raw WS and subscribe-first cursor recovery. Both distributions
+pass full Swift 6 strict source checks. Standalone actual-source auth/config,
+transport, recovery and App Store HTTP contracts passed. Native wrapper validates
+57 assets and 11 Python tests, then stops because this host has Command Line Tools
+but no Xcode/XCTest. Native application build/runtime remains unverified.
+
+Phase 15 complete: Windows migration in `windows/spring-backend-windows`, 7403392.
+Google login, rotated SIDEY credentials/legacy claim, authenticated raw WS,
+same-logical-UUID retry, cursor recovery and focused presence replaced Supabase.
+Core 204, Presentation 150 and portable actual Infrastructure contract 50 tests
+passed. Cross-target managed libraries and actual coordinator source compile.
+Solution native build cannot execute Windows MakePri/mt on this macOS host;
+WinUI runtime validation remains unverified. Full cross-target format passed.
+
+Phase 16 complete: website checkout in `shared/spring-backend-web`, d4c7252.
+REST checkout contract/CSP, fragment token scrubbing, server consent/amount,
+provider-verified completion and privacy copy migrated. `pnpm --dir website test`
+passed 27 tests; real Chrome desktop/mobile checkout and three privacy locales
+passed deterministic-network browser checks. Server commit 6677e72 adds browser
+contract and allowed/foreign-origin CORS tests (7 focused tests passed).
+
+Phase 17 complete: macOS 0334fb3, Windows 6056ce0, shared docs 76d6ecf.
+Removed unused SDK/Phoenix/epoch/RPC helpers, keeping only legacy ownership-proof
+compatibility. Corrected Google-only account deletion in both Mac distributions;
+added independent socket silence/write deadlines and App Store test target
+coverage. Mac strict source checks passed both distributions; actual-source
+standalone transport 14, recovery 10, domain/catalog/etc. 98 and App Store HTTP 8
+checks passed. These are not native XCTest runs. Windows Core 201, Presentation
+150, Infrastructure contracts 58, installer/language source checks 62 passed.
+Windows format and managed compiler checks passed. Repository workflow checks
+passed on each platform/shared snapshot; native platform gaps still apply.
+
+Phase 18 complete: nerdctl image/run configuration, Nginx/tunnel/Prometheus
+examples and fail-closed blue/green operator. Admission covers HTTP, WS and
+maintenance; inactive processes cannot expire active-instance sessions. Drain
+closes WS with 1012, waits for admitted work, and invalidates membership on
+reactivation. Management metrics are loopback-listener-only. `./mvnw -q verify`
+passed 72 tests; affected HTTP/WS/deployment tests passed again after adding
+DB-backed readiness. Seven operator failure/response-loss tests and real local
+Nginx syntax/REST/WS/private-route/log checks passed. Shell/source/diff checks
+passed. Target Linux nerdctl/containerd image execution and existing host config
+integration were not run on this macOS host.
+
+Remaining: phase 19. Provider production calls and target-host native/container
+verification are distinct from passing local deterministic contract checks.

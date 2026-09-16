@@ -13,6 +13,8 @@ sh scripts/local-postgres.sh
 Set `JAVA_HOME` to a Java 21 JDK. Production configuration requires an explicit
 database credential. Local development defaults are not deployment secrets.
 Management endpoints bind to loopback on port 9090.
+Deployment, nerdctl images, single-active blue/green and monitoring:
+[DEPLOYMENT.md](DEPLOYMENT.md).
 
 Dependency references: [Spring Boot build systems](https://docs.spring.io/spring-boot/reference/using/build-systems.html),
 [jOOQ code generation](https://www.jooq.org/doc/latest/manual/code-generation/codegen-configuration/).

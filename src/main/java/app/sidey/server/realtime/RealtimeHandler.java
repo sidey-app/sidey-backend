@@ -14,14 +14,16 @@ import tools.jackson.databind.ObjectMapper;
 public class RealtimeHandler extends TextWebSocketHandler {
     private static final int MAX_FRAME=16384;
     private final ConnectionRegistry registry;
+    private final app.sidey.server.common.ServingState serving;
     private final AuthService auth;
     private final ObjectMapper json;
     private final List<RealtimeCommandHandler> commands;
     private final app.sidey.server.message.MessageService messages;
-    public RealtimeHandler(ConnectionRegistry registry,AuthService auth,ObjectMapper json,List<RealtimeCommandHandler> commands,app.sidey.server.message.MessageService messages){this.registry=registry;this.auth=auth;this.json=json;this.commands=List.copyOf(commands);this.messages=messages;}
+    public RealtimeHandler(ConnectionRegistry registry,AuthService auth,ObjectMapper json,List<RealtimeCommandHandler> commands,app.sidey.server.message.MessageService messages,app.sidey.server.common.ServingState serving){this.serving=serving;this.registry=registry;this.auth=auth;this.json=json;this.commands=List.copyOf(commands);this.messages=messages;}
     @Override public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         session.setTextMessageSizeLimit(MAX_FRAME);session.setBinaryMessageSizeLimit(MAX_FRAME);
-        try {
+        try (var lease=serving.enter()) {
+            if(lease==null){session.close(new CloseStatus(1012,"server_restarting"));return;}
             UUID user=user(session),sid=sid(session);
             auth.authorize(user,sid);
             registry.open(session,user,sid);
@@ -29,6 +31,12 @@ public class RealtimeHandler extends TextWebSocketHandler {
         } catch(ApiException|IllegalArgumentException rejected){session.close(new CloseStatus(1008,"session_rejected"));}
     }
     @Override protected void handleTextMessage(WebSocketSession session,TextMessage frame) throws Exception {
+        try(var lease=serving.enter()){
+            if(lease==null){session.close(new CloseStatus(1012,"server_restarting"));return;}
+            dispatch(session,frame);
+        }
+    }
+    private void dispatch(WebSocketSession session,TextMessage frame) throws Exception {
         String requestId=null;
         if(frame.getPayloadLength()>MAX_FRAME || frame.getPayload().getBytes(StandardCharsets.UTF_8).length>MAX_FRAME){session.close(new CloseStatus(1009,"frame_too_large"));return;}
         JsonNode command;

@@ -5,7 +5,6 @@ import app.sidey.server.room.RoomMembershipBoundary;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
 import java.util.*;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -49,7 +48,7 @@ public class PresenceService implements ConnectionRegistry.Lifecycle,RoomMembers
         states.values().stream().filter(s->room.equals(s.room) && !current.contains(s.user)).forEach(s->s.room=null);dirty.add(room);
     }}
     @Override public synchronized void invalidate(UUID room){states.values().stream().filter(s->room.equals(s.room)).forEach(s->s.room=null);dirty.add(room);}
-    @Scheduled(fixedDelay=1000) public void tick(){
+    public void tick(){
         List<String> expired;Set<UUID> changed;
         synchronized(this){long now=clock.millis();expired=states.entrySet().stream().filter(e->now-e.getValue().heartbeat>=60_000).map(Map.Entry::getKey).toList();}
         expired.forEach(id->{closed(id);connections.close(id);});

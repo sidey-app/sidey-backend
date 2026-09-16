@@ -7,6 +7,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class ApiErrors {
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    ResponseEntity<Map<String,String>> missing(Exception error){
+        return ResponseEntity.status(404).body(Map.of("code","not_found"));
+    }
     @ExceptionHandler(Exception.class)
     ResponseEntity<Map<String,String>> unexpected(Exception error){
         org.slf4j.LoggerFactory.getLogger(ApiErrors.class).error("request_failed exceptionType={}",error.getClass().getSimpleName());

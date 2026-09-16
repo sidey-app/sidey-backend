@@ -71,6 +71,8 @@ public class MembershipRegistry implements RoomMembershipBoundary.Observer {
     @Override public void invalidate(UUID room) {
         synchronized(cache){cache.remove(room);}
     }
+    /** Only called after admission is disabled and all operations have quiesced. */
+    public void invalidateAll() { synchronized(cache){cache.clear();} }
     public int size() {
         synchronized(cache){prune(System.nanoTime());return cache.size();}
     }

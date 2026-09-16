@@ -112,7 +112,6 @@ public class AuthService {
         return result;
     }
     public void logout(UUID sid) { tx.run(() -> {revokeInTransaction(sid);return null;}); }
-    @org.springframework.scheduling.annotation.Scheduled(fixedDelay=60000,initialDelay=60000)
     public void expireSessions(){tx.run(()->{
         for(var row:db.fetch("select id from user_sessions where revoked_at is null and expires_at<=? order by expires_at limit 1000 for update skip locked",utc(clock.instant())))revokeInTransaction(row.get("id",UUID.class));return null;
     });}
