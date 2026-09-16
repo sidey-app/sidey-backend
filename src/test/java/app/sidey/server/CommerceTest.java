@@ -29,6 +29,9 @@ class CommerceTest extends PostgresTest {
     }
     @Test void checkoutAndProviderTruthAreRequiredBeforeOwnership(){
         var s=new Setup();var order=s.create();var p=s.paid(order);
+        var catalog=s.service.catalog(s.user);
+        assertTrue(catalog.stream().allMatch(row->row.get("tax_inclusive") instanceof Boolean));
+        assertTrue(catalog.stream().allMatch(row->row.get("product_description") instanceof String));
         assertThrows(ApiException.class,()->s.service.complete(order.checkoutToken(),p.id()));assertTrue(s.service.entitlements(s.user).isEmpty());
         assertThrows(ApiException.class,()->s.service.checkout(order.checkoutToken(),true,"forged-policy"));s.consent(order);
         assertThrows(ApiException.class,()->s.service.complete(Crypto.token(),p.id()));
