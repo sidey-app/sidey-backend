@@ -38,3 +38,12 @@ logging:
       console: logstash
   level:
     org.jooq.tools.LoggerListener: OFF
+sidey:
+  auth:
+    jwt-secret: ${SIDEY_JWT_SECRET:}
+    issuer: ${SIDEY_JWT_ISSUER:sidey}
+    audience: sidey-api
+    google-audiences: ${SIDEY_GOOGLE_AUDIENCES:}
+    apple-audiences: ${SIDEY_APPLE_AUDIENCES:}
+    legacy-supabase-origin: ${SIDEY_LEGACY_SUPABASE_ORIGIN:}
+    legacy-supabase-api-key: ${SIDEY_LEGACY_SUPABASE_API_KEY:}
