@@ -19,6 +19,9 @@ public final class RoomMembershipBoundary {
     public <T> T read(UUID roomId, Supplier<T> snapshot) {
         try (var lease=locks.acquire(roomId.toString(),false)) { return snapshot.get(); }
     }
+    public <T> T write(UUID roomId, Supplier<T> work) {
+        try (var lease=locks.acquire(roomId.toString(),true)) { return work.get(); }
+    }
     public <T> T mutate(UUID roomId, Supplier<T> transaction) { return mutateAll(List.of(roomId),transaction); }
     public <T> T mutateAll(List<UUID> roomIds, Supplier<T> transaction) {
         List<UUID> ordered=roomIds.stream().distinct().sorted().toList();
