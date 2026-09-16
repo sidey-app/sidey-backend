@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <parent><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-parent</artifactId><version>4.1.1</version><relativePath/></parent>
   <groupId>app.sidey</groupId><artifactId>sidey-server</artifactId><version>0.1.0-SNAPSHOT</version>
-  <properties><java.version>21</java.version><jooq.version>3.20.11</jooq.version><maven.compiler.showWarnings>true</maven.compiler.showWarnings></properties>
+  <properties><java.version>21</java.version><jooq.version>3.20.11</jooq.version><maven.compiler.showWarnings>true</maven.compiler.showWarnings><sidey.codegen.url>jdbc:postgresql://127.0.0.1:55432/sidey</sidey.codegen.url><sidey.codegen.user>sidey</sidey.codegen.user><sidey.codegen.password></sidey.codegen.password></properties>
   <dependencies>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-webmvc</artifactId></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-websocket</artifactId></dependency>
@@ -18,6 +18,8 @@
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
   </dependencies>
   <build><plugins>
+    <plugin><groupId>org.flywaydb</groupId><artifactId>flyway-maven-plugin</artifactId><executions><execution><phase>generate-sources</phase><goals><goal>migrate</goal></goals></execution></executions><configuration><url>${sidey.codegen.url}</url><user>${sidey.codegen.user}</user><password>${sidey.codegen.password}</password><locations><location>filesystem:src/main/resources/db/migration</location></locations></configuration><dependencies><dependency><groupId>org.flywaydb</groupId><artifactId>flyway-database-postgresql</artifactId><version>${flyway.version}</version></dependency><dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><version>${postgresql.version}</version></dependency></dependencies></plugin>
+    <plugin><groupId>org.jooq</groupId><artifactId>jooq-codegen-maven</artifactId><version>${jooq.version}</version><executions><execution><phase>generate-sources</phase><goals><goal>generate</goal></goals></execution></executions><configuration><jdbc><driver>org.postgresql.Driver</driver><url>${sidey.codegen.url}</url><user>${sidey.codegen.user}</user><password>${sidey.codegen.password}</password></jdbc><generator><database><name>org.jooq.meta.postgres.PostgresDatabase</name><inputSchema>public</inputSchema><excludes>flyway_schema_history</excludes></database><generate><javaTimeTypes>true</javaTimeTypes></generate><target><packageName>app.sidey.server.db</packageName><directory>target/generated-sources/jooq</directory></target></generator></configuration><dependencies><dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><version>${postgresql.version}</version></dependency></dependencies></plugin>
     <plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId></plugin>
     <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-enforcer-plugin</artifactId><executions><execution><id>java-baseline</id><goals><goal>enforce</goal></goals><configuration><rules><requireJavaVersion><version>[21,22)</version></requireJavaVersion></rules></configuration></execution></executions></plugin>
   </plugins></build>
