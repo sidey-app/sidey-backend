@@ -50,3 +50,11 @@ sidey:
 
   room:
     invite-pepper: ${SIDEY_INVITE_PEPPER}
+  commerce:
+    portone-secret: ${PORTONE_API_SECRET:}
+    portone-webhook-secret: ${PORTONE_WEBHOOK_SECRET:}
+    portone-store: ${PORTONE_STORE_ID:}
+    portone-channel: ${PORTONE_CHANNEL_KEY:}
+    ops-key: ${SIDEY_COMMERCE_OPS_KEY:}
+    website: ${SIDEY_WEBSITE_URL:https://sidey-app.github.io/SIDEY/}
+    web-origin: ${SIDEY_WEBSITE_ORIGIN:https://sidey-app.github.io}

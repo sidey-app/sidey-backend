@@ -42,5 +42,14 @@ Same run UUID returns its committed report; failed validation rolls back all dat
 fixture, intentional projection failure/rollback and successful rerun. Source
 guardrails, shell syntax and diff check passed. Production import is not run.
 
-Remaining: phases 11–19. Production provider calls require deployment credentials;
+Phase 11 complete: REST catalog/checkout/orders/completion, policy consent,
+server-side PortOne requery and official SDK webhook verification, internal
+idempotent refund/requery, source ledger and effective projection reconciliation.
+`./mvnw -q verify`: 57 tests passed; source guardrails and diff check passed.
+Tests cover concurrent completion/order rate limits, verification mismatches,
+webhook hash conflicts, cancellation response loss, other active ownership
+sources, historical inclusion snapshots and real HMAC verification/tampering.
+Actual PortOne API requests remain deployment-credential-dependent.
+
+Remaining: phases 12–19. Production provider calls require deployment credentials;
 local provider contracts use deterministic test doubles.
