@@ -23,5 +23,10 @@ same-UUID canonical retry/conflict, rate limit, cursor history and three-day pru
 Tests include concurrent same UUID, send-before-kick ordering, unrelated sender
 progress, transaction rollback, lost response retry and 125-message pagination.
 
-Remaining: phases 8–19. Production provider calls require deployment credentials;
+Phase 8 complete: subscribe-first recovery watermark, bounded cursor catch-up,
+and concurrent commit ordering tests. `./mvnw -q verify`: 47 tests passed;
+source guardrails and diff check passed. Normal sends retain shared concurrency;
+only recovery checkpoint waits for in-flight room commits.
+
+Remaining: phases 9–19. Production provider calls require deployment credentials;
 local provider contracts use deterministic test doubles.

@@ -23,7 +23,7 @@ final class CoreFixture {
         String secret=Base64.getEncoder().encodeToString(Crypto.hash("test-key"));
         auth=new AuthService(db,this.tx,(provider,credential,nonce)->new IdentityVerifier.VerifiedIdentity(provider,credential),old->{throw new ApiException(401,"invalid_legacy");},new AccessTokens(secret,"sidey","sidey-api"),Clock.systemUTC(),e->{});
         rooms=new RoomService(db,this.tx,auth,new CoordinationLocks(),boundary,new InviteCodes(secret),e->{});
-        messages=new MessageService(db,this.tx,auth,new SimpleMeterRegistry());
+        messages=new MessageService(db,this.tx,auth,new SimpleMeterRegistry(),new app.sidey.server.message.RecoveryBoundary());
     }
     UUID user(){UUID id=UUID.randomUUID();tx.run(()->{
         db.execute("insert into users(id,status) values (?,'ACTIVE')",id);

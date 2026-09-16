@@ -16,8 +16,9 @@ public class MessageController {
     @GetMapping MessageService.Page history(@AuthenticationPrincipal Jwt jwt,@PathVariable UUID room,
             @RequestParam(required=false) OffsetDateTime afterCreatedAt,@RequestParam(required=false) UUID afterId,
             @RequestParam(required=false) OffsetDateTime beforeCreatedAt,@RequestParam(required=false) UUID beforeId,
+            @RequestParam(required=false) OffsetDateTime throughCreatedAt,@RequestParam(required=false) UUID throughId,
             @RequestParam(defaultValue="100") int limit){
-        return messages.history(AuthController.user(jwt),room,cursor(afterCreatedAt,afterId),cursor(beforeCreatedAt,beforeId),limit);
+        return messages.history(AuthController.user(jwt),room,cursor(afterCreatedAt,afterId),cursor(beforeCreatedAt,beforeId),cursor(throughCreatedAt,throughId),limit);
     }
     @GetMapping("/{id}") MessageService.Message get(@AuthenticationPrincipal Jwt jwt,@PathVariable UUID room,@PathVariable UUID id){return messages.get(AuthController.user(jwt),room,id);}
     private MessageService.Cursor cursor(OffsetDateTime time,UUID id){if((time==null)!=(id==null))throw new ApiException(400,"incomplete_cursor");return time==null?null:new MessageService.Cursor(time,id);}

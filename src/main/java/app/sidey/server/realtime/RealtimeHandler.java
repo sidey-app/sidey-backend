@@ -17,7 +17,8 @@ public class RealtimeHandler extends TextWebSocketHandler {
     private final AuthService auth;
     private final ObjectMapper json;
     private final List<RealtimeCommandHandler> commands;
-    public RealtimeHandler(ConnectionRegistry registry,AuthService auth,ObjectMapper json,List<RealtimeCommandHandler> commands){this.registry=registry;this.auth=auth;this.json=json;this.commands=List.copyOf(commands);}
+    private final app.sidey.server.message.MessageService messages;
+    public RealtimeHandler(ConnectionRegistry registry,AuthService auth,ObjectMapper json,List<RealtimeCommandHandler> commands,app.sidey.server.message.MessageService messages){this.registry=registry;this.auth=auth;this.json=json;this.commands=List.copyOf(commands);this.messages=messages;}
     @Override public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         session.setTextMessageSizeLimit(MAX_FRAME);session.setBinaryMessageSizeLimit(MAX_FRAME);
         try {
@@ -45,7 +46,7 @@ public class RealtimeHandler extends TextWebSocketHandler {
             String type=typeNode.asString();
             switch(type){
                 case "ping" -> registry.send(session.getId(),reply("pong",requestId),false);
-                case "subscribe" -> {UUID room=room(command);registry.subscribe(session.getId(),room);var ack=reply("ack",requestId);ack.put("command",type);ack.put("roomId",room);registry.send(session.getId(),ack,true);}
+                case "subscribe" -> {UUID room=room(command);registry.subscribe(session.getId(),room);var ack=reply("ack",requestId);ack.put("command",type);ack.put("roomId",room);ack.put("recoveryThrough",messages.checkpoint(user(session),room));registry.send(session.getId(),ack,true);}
                 case "unsubscribe" -> {UUID room=room(command);registry.unsubscribe(session.getId(),room);var ack=reply("ack",requestId);ack.put("command",type);ack.put("roomId",room);registry.send(session.getId(),ack,true);}
                 default -> {
                     RealtimeCommandHandler dispatcher=commands.stream().filter(c->c.supports(type)).findFirst().orElseThrow(()->new ApiException(400,"unknown_command"));
