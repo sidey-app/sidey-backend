@@ -46,7 +46,16 @@ public class AuthService {
             Transactions.lock(db,"identity:"+identity.provider()+":"+identity.subject());
             var row=db.fetchOne("select status from users where id=? for update",user);
             if(row == null) throw new ApiException(403,"legacy_account_not_imported");
-            if(!"LEGACY_ANONYMOUS_UNCLAIMED".equals(row.get("status"))) throw new ApiException(409,"legacy_account_already_claimed");
+            if(!"LEGACY_ANONYMOUS_UNCLAIMED".equals(row.get("status"))) {
+                // Claim may have committed before its response was received. Both
+                // ownership proofs must still identify the same already-bound user;
+                // this recovery path must never attach a new identity to ACTIVE.
+                if(!"ACTIVE".equals(row.get("status")) || db.fetchOne(
+                        "select 1 from user_identities where user_id=? and provider=? and provider_subject=?",
+                        user,identity.provider(),identity.subject())==null)
+                    throw new ApiException(409,"legacy_account_already_claimed");
+                return createSession(user,platform,name);
+            }
             bind(user,identity.provider(),identity.subject());
             db.execute("update users set status='ACTIVE',updated_at=now() where id=?",user);
             return createSession(user,platform,name);

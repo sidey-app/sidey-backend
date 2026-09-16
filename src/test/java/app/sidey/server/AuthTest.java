@@ -34,6 +34,11 @@ class AuthTest extends PostgresTest {
         assertThrows(ApiException.class, () -> service.active(legacy));
         var session=service.claim("verified-old-token","GOOGLE","legacy-sub","nonce","MACOS",null);
         assertEquals(legacy,session.userId());service.authorize(legacy,session.sessionId());
+        var recovered=service.claim("verified-old-token","GOOGLE","legacy-sub","fresh-nonce","MACOS",null);
+        assertEquals(legacy,recovered.userId());assertNotEquals(session.sessionId(),recovered.sessionId());
+        assertEquals(1,db.fetchOne("select count(*) from user_identities where user_id=?",legacy).get(0,Integer.class));
+        assertThrows(ApiException.class,()->service.claim("verified-old-token","APPLE","other-sub","fresh-nonce","MACOS",null));
+        assertThrows(ApiException.class,()->service.claim("forged-token","GOOGLE","legacy-sub","fresh-nonce","MACOS",null));
     }
     @Test void concurrentRefreshAllowsOneRotationAndReuseRevokesFamily() throws Exception {
         var service=auth(null);var session=service.login("GOOGLE",UUID.randomUUID().toString(),"nonce","MACOS",null);
