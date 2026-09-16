@@ -44,7 +44,7 @@ public final class LegacyMigration {
             execute(target,"delete from app_store_product_offers");execute(target,"delete from commerce_prices");execute(target,"delete from commerce_products");
             copy("commerce_products",pub+".commerce_products r",Map.of(),"order by r.related_character_product_id nulls first");
             copy("commerce_prices",pub+".commerce_prices r",Map.of(),"");
-            copy("app_store_product_offers",priv+".app_store_product_offers r",Map.of(),"");
+            copy("app_store_product_offers",priv+".app_store_product_offers r",Map.of("included_entitlement_key","case when r.includes_related_throwable then (select p.entitlement_key from "+pub+".commerce_products p where p.related_character_product_id=r.product_id) end"),"");
             copy("commerce_orders",pub+".commerce_orders r",Map.of("payment_environment","(select case p.portone_channel_type when 'TEST' then 'test' when 'LIVE' then 'live' end from "+priv+".commerce_payments p where p.order_id=r.id)"),"");
             copy("commerce_payments",priv+".commerce_payments r",Map.of("provider_payment_id","case r.provider when 'portone' then r.portone_payment_id else r.payment_key end","provider_transaction_id","r.provider_transaction_key","store_id","r.portone_store_id","channel_key","r.portone_channel_key","provider_version","r.portone_version","channel_type","r.portone_channel_type"),"");
             copy("commerce_webhook_events",priv+".commerce_webhook_events r",Map.of("provider","coalesce((select p.provider from "+priv+".commerce_payments p where p.order_id=r.order_id),'legacy_unknown')"),"");

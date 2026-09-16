@@ -26,11 +26,8 @@ public class PortOneProvider implements PaymentProvider {
         var request=HttpRequest.newBuilder(URI.create("https://api.portone.io/payments/"+escaped+(body==null?"":"/cancel"))).timeout(Duration.ofSeconds(8)).header("Authorization","PortOne "+secret).header("Content-Type","application/json");
         if(body!=null)request.header("Idempotency-Key","\"refund-"+requestId+"\"").POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(body)));
         try {
-            var response=http.send(request.build(),HttpResponse.BodyHandlers.ofInputStream());
-            try(var stream=response.body()){
-                if(response.statusCode()!=200)throw new ApiException(502,"payment_provider_error");
-                byte[] bytes=stream.readNBytes(262145);if(bytes.length>262144)throw new ApiException(502,"payment_provider_error");return json.readTree(bytes);
-            }
+            var response=app.sidey.server.common.ProviderHttp.send(http,request.build(),262144,Duration.ofSeconds(8));
+            if(response.statusCode()!=200)throw new ApiException(502,"payment_provider_error");return json.readTree(response.body());
         }catch(InterruptedException interrupted){Thread.currentThread().interrupt();throw new ApiException(502,"payment_provider_error");}
         catch(java.io.IOException|IllegalArgumentException failure){throw new ApiException(502,"payment_provider_error");}
     }

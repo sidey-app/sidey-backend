@@ -13,7 +13,8 @@ public class GrantLedger {
     private final DSLContext db;private final Transactions tx;private final ApplicationEventPublisher events;
     public GrantLedger(DSLContext db,Transactions tx,ApplicationEventPublisher events){this.db=db;this.tx=tx;this.events=events;}
     /** Caller owns provider serialization. User lock serializes projection with equipment/deletion. */
-    public UUID apply(UUID user,String key,String kind,String reference,String status,Instant granted,String included){return tx.run(()->{
+    public UUID apply(UUID user,String key,String kind,String reference,String status,Instant granted,String included){return apply(user,key,kind,reference,status,granted,included,"active".equals(status)?null:Instant.now());}
+    public UUID apply(UUID user,String key,String kind,String reference,String status,Instant granted,String included,Instant revoked){return tx.run(()->{
         if(user!=null && db.fetchOne("select id from users where id=? for update",user)==null)throw new ApiException(409,"grant_account_missing");
         Transactions.lock(db,"grant:"+kind+":"+reference);
         var existing=db.fetchOne("select * from commerce_grants where source_kind=? and source_reference=? for update",kind,reference);
@@ -21,9 +22,9 @@ public class GrantLedger {
         if(existing!=null && (!Objects.equals(existing.get("entitlement_key"),key) || (existing.get("user_id")!=null && !Objects.equals(existing.get("user_id"),user))))throw new ApiException(409,"grant_source_conflict");
         String snapshot=existing==null?included:existing.get("included_entitlement_key",String.class);
         if(user==null && status.equals("active"))statusGuard();
-        db.execute("insert into commerce_grants(id,user_id,entitlement_key,source_kind,source_reference,status,granted_at,revoked_at,included_entitlement_key) values (?,?,?,?,?,?,?,case when ?='active' then null else now() end,?) on conflict(id) do update set user_id=excluded.user_id,status=excluded.status,revoked_at=excluded.revoked_at,updated_at=now()",id,user,key,kind,reference,status,Timestamp.from(granted),status,snapshot);
+        db.execute("insert into commerce_grants(id,user_id,entitlement_key,source_kind,source_reference,status,granted_at,revoked_at,included_entitlement_key) values (?,?,?,?,?,?,?,?,?) on conflict(id) do update set user_id=excluded.user_id,status=excluded.status,revoked_at=excluded.revoked_at,updated_at=now()",id,user,key,kind,reference,status,Timestamp.from(granted),revoked==null?null:Timestamp.from(revoked),snapshot);
         if(snapshot!=null){
-            db.execute("insert into commerce_grants(user_id,entitlement_key,source_kind,source_reference,status,granted_at,revoked_at,parent_grant_id) values (?,?,'complimentary',?,?,?,case when ?='active' then null else now() end,?) on conflict(parent_grant_id) where parent_grant_id is not null do update set user_id=excluded.user_id,status=excluded.status,revoked_at=excluded.revoked_at,updated_at=now()",user,snapshot,"included:"+id,status,Timestamp.from(granted),status,id);
+            db.execute("insert into commerce_grants(user_id,entitlement_key,source_kind,source_reference,status,granted_at,revoked_at,parent_grant_id) values (?,?,'complimentary',?,?,?,?,?) on conflict(parent_grant_id) where parent_grant_id is not null do update set user_id=excluded.user_id,status=excluded.status,revoked_at=excluded.revoked_at,updated_at=now()",user,snapshot,"included:"+id,status,Timestamp.from(granted),revoked==null?null:Timestamp.from(revoked),id);
         }
         if(user!=null){refresh(user,key);if(snapshot!=null)refresh(user,snapshot);events.publishEvent(new StructureChanged(null,user));}return id;
     });}

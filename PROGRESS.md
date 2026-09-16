@@ -51,5 +51,16 @@ webhook hash conflicts, cancellation response loss, other active ownership
 sources, historical inclusion snapshots and real HMAC verification/tampering.
 Actual PortOne API requests remain deployment-credential-dependent.
 
-Remaining: phases 12–19. Production provider calls require deployment credentials;
+Phase 12 complete: official Apple verification/API boundary, transactional submit/
+restore/notification processing, environment-scoped IDs, preserved account binding,
+offer inclusion snapshots, stale-state protection and historical signed-money
+backfill. Added fresh Apple identity deletion and separate authorization revocation.
+`./mvnw -q verify`: 67 tests passed; source guardrails and diff check passed.
+Tests cover concurrent submission, account-token/binding conflicts, deletion restore,
+stale refunds/money, notification replay/hash conflict, decoder normalization and
+unsigned JWS rejection. Provider HTTP has bounded body/deadline tests. Real Apple
+API/JWS/OCSP/revocation success remains credential-dependent. Corrected tests to
+use a historical bundled guinea-pig offer; the current pig offer is solo.
+
+Remaining: phases 13–19. Production provider calls require deployment credentials;
 local provider contracts use deterministic test doubles.

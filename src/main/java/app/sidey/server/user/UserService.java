@@ -58,4 +58,6 @@ public class UserService {
             }));
         });
     }
+
+    public boolean hasAppleIdentity(UUID user){return db.fetchOne("select 1 from user_identities where user_id=? and provider='APPLE'",user)!=null;}
 }

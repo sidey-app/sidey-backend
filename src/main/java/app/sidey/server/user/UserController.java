@@ -13,5 +13,9 @@ public class UserController {
     public UserController(UserService users) { this.users=users; }
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@AuthenticationPrincipal Jwt jwt) { users.delete(AuthController.user(jwt)); }
+    public void delete(@AuthenticationPrincipal Jwt jwt) {
+        var user=AuthController.user(jwt);
+        if(users.hasAppleIdentity(user))throw new app.sidey.server.common.ApiException(400,"apple_reauthentication_required");
+        users.delete(user);
+    }
 }

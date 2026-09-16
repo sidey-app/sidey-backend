@@ -58,3 +58,14 @@ sidey:
     ops-key: ${SIDEY_COMMERCE_OPS_KEY:}
     website: ${SIDEY_WEBSITE_URL:https://sidey-app.github.io/SIDEY/}
     web-origin: ${SIDEY_WEBSITE_ORIGIN:https://sidey-app.github.io}
+  apple:
+    bundle-id: ${APPLE_BUNDLE_ID:}
+    app-id: ${APPLE_APP_ID:0}
+    root-certificates: ${APPLE_ROOT_CERTIFICATES:}
+    private-key-file: ${APPLE_IAP_PRIVATE_KEY_FILE:}
+    key-id: ${APPLE_IAP_KEY_ID:}
+    issuer-id: ${APPLE_IAP_ISSUER_ID:}
+    sign-in-client-id: ${APPLE_SIGN_IN_CLIENT_ID:}
+    sign-in-key-id: ${APPLE_SIGN_IN_KEY_ID:}
+    sign-in-team-id: ${APPLE_SIGN_IN_TEAM_ID:}
+    sign-in-private-key-file: ${APPLE_SIGN_IN_PRIVATE_KEY_FILE:}
