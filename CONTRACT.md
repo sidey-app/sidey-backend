@@ -43,3 +43,17 @@ the retention window cannot resurrect intentionally deleted messages.
 invalidates expired local history. Ephemeral events are never replayed. A slow
 consumer can lose ephemeral events; durable queue overflow closes the socket,
 requiring reconnect and REST catch-up.
+# Presence and transient commands
+
+Send `heartbeat` every 20 seconds; 60 seconds without heartbeat expires the
+connection. `presence.update` carries nullable `activeRoomId` and `activity`
+(`ONLINE` or `AWAY`, determined by OS idle >= 5 minutes or screen lock).
+`presence.snapshot` carries `roomId`. Server `presence` frames contain a member
+UUID/status map; a user is ONLINE if any focused device is online, otherwise
+AWAY if any focused device remains, otherwise OFFLINE. Transport reconnecting
+and typing are separate client state. Ephemeral snapshots can be requested again.
+
+`typing` carries `roomId` and boolean `active`; its server lease expires after
+4 seconds. `character.pulse` carries `roomId,eventId`; `character.throw` also
+carries `targetUserId`. Actor, source character and throwable render asset are
+server selected. Ephemeral frames are never recovered from history.

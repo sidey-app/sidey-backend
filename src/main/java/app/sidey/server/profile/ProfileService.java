@@ -35,9 +35,9 @@ public class ProfileService {
     });}
     public Profile equipment(UUID user,String kind,String item){return tx.run(()->{
         lock(user);read(user);
-        if(!Set.of("bubble_style","throwable").contains(kind==null?"":kind)) throw new ApiException(400,"invalid_product_kind");
+        if(!Set.of("bubble","throwable").contains(kind==null?"":kind)) throw new ApiException(400,"invalid_product_kind");
         if(item!=null && !owned(user,kind,item)) throw new ApiException(403,"cosmetic_ownership_required");
-        if("bubble_style".equals(kind)) db.execute("update profiles set equipped_bubble_style_id=?,updated_at=now() where id=?",item,user);
+        if("bubble".equals(kind)) db.execute("update profiles set equipped_bubble_style_id=?,updated_at=now() where id=?",item,user);
         else db.execute("update profiles set equipped_throwable_id=?,updated_at=now() where id=?",item,user);
         events.publishEvent(new StructureChanged(null,user));
         return read(user);

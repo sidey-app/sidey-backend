@@ -27,6 +27,9 @@ public class ConnectionRegistry implements RoomEventPublisher, RoomMembershipBou
     private final ObjectMapper json;
     private final Executor executor;
     private final CoordinationLocks coordination;
+    public interface Lifecycle { void opened(String id,UUID user,UUID sid); void closed(String id); }
+    private final java.util.concurrent.CopyOnWriteArrayList<Lifecycle> lifecycle=new java.util.concurrent.CopyOnWriteArrayList<>();
+    public void observe(Lifecycle listener){lifecycle.add(listener);}
     public ConnectionRegistry(MembershipRegistry members,RoomMembershipBoundary boundary,AuthService auth,ObjectMapper json,
             Executor realtimeExecutor,CoordinationLocks coordination,MeterRegistry metrics) {
         this.members=members;this.auth=auth;this.json=json;this.executor=realtimeExecutor;this.coordination=coordination;
@@ -44,12 +47,14 @@ public class ConnectionRegistry implements RoomEventPublisher, RoomMembershipBou
             connections.put(socket.getId(),state);
             try { auth.authorize(user,sid); }
             catch(RuntimeException revoked) { close(socket.getId());outbound.close(CloseStatus.POLICY_VIOLATION);throw revoked; }
+            lifecycle.forEach(l->l.opened(socket.getId(),user,sid));
+            if(connections.get(socket.getId())!=state)lifecycle.forEach(l->l.closed(socket.getId()));
             return null;
         });
     }
     public void close(String id) {
         State state=connections.remove(id);
-        if(state!=null) { state.rooms.clear(); state.outbound.close(CloseStatus.NORMAL); }
+        if(state!=null) { state.rooms.clear();lifecycle.forEach(l->l.closed(id)); state.outbound.close(CloseStatus.NORMAL); }
     }
     public void subscribe(String id,UUID room) {
         State state=state(id);
@@ -69,14 +74,20 @@ public class ConnectionRegistry implements RoomEventPublisher, RoomMembershipBou
     }
     private record Recipient(String id,State state,long generation) {}
     @Override public void publish(RoomEvent event) {
-        List<Recipient> recipients=members.recipients(event.roomId(),snapshot->{
+        publish(event,null,null);
+    }
+    public void publishFrom(UUID room,UUID actor,UUID target,Object payload) {publish(new RoomEvent(room,payload,false),actor,target);}
+    private void publish(RoomEvent event,UUID actor,UUID targetUser) {
+        java.util.function.Function<Set<UUID>,List<Recipient>> select=snapshot->{
+            if(targetUser!=null && !snapshot.contains(targetUser))throw new ApiException(403,"target_membership_required");
             List<Recipient> result=new ArrayList<>();
             connections.forEach((id,state)->{
                 Long generation=state.rooms.get(event.roomId());
                 if(generation!=null && snapshot.contains(state.user))result.add(new Recipient(id,state,generation));
             });
             return result;
-        });
+        };
+        List<Recipient> recipients=actor==null?members.recipients(event.roomId(),select):members.authorized(event.roomId(),actor,select);
         String payload=json.writeValueAsString(event.payload());
         for(Recipient target:recipients) target.state.outbound.enqueue(payload,event.durable(),()->
             connections.get(target.id)==target.state && Objects.equals(target.state.rooms.get(event.roomId()),target.generation));
@@ -89,6 +100,7 @@ public class ConnectionRegistry implements RoomEventPublisher, RoomMembershipBou
     @TransactionalEventListener public void revoked(SessionEvents event) {
         connections.forEach((id,state)->{if(state.sid.equals(event.sessionId())) {
             connections.remove(id,state);state.rooms.clear();
+            lifecycle.forEach(l->l.closed(id));
             executeClose(state,CloseStatus.POLICY_VIOLATION);
         }});
     }
@@ -108,7 +120,7 @@ public class ConnectionRegistry implements RoomEventPublisher, RoomMembershipBou
         }
     }
     public void closeAll(int code,String reason) {
-        connections.forEach((id,state)->{connections.remove(id,state);state.rooms.clear();executeClose(state,new CloseStatus(code,reason));});
+        connections.forEach((id,state)->{connections.remove(id,state);state.rooms.clear();lifecycle.forEach(l->l.closed(id));executeClose(state,new CloseStatus(code,reason));});
     }
     public int size() { return connections.size(); }
     public UUID user(String id) { return state(id).user; }

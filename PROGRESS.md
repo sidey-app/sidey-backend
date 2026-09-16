@@ -28,5 +28,11 @@ and concurrent commit ordering tests. `./mvnw -q verify`: 47 tests passed;
 source guardrails and diff check passed. Normal sends retain shared concurrency;
 only recovery checkpoint waits for in-flight room commits.
 
-Remaining: phases 9–19. Production provider calls require deployment credentials;
+Phase 9 complete: per-connection presence/focus/heartbeat, multi-device aggregation,
+typing leases, pulse/throw authorization, server-selected cosmetics and bounded
+per-user transient rate windows. `./mvnw -q verify`: 50 tests passed; source
+guardrails and diff check passed. Corrected earlier profile/message lookup using
+`bubble_style` where the catalog domain kind is `bubble`; snapshot retry tested.
+
+Remaining: phases 10–19. Production provider calls require deployment credentials;
 local provider contracts use deterministic test doubles.

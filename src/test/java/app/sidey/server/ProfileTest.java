@@ -23,6 +23,11 @@ class ProfileTest extends PostgresTest {
         assertThrows(ApiException.class,()->profiles.equipment(a,"throwable","throwable_timber"));
         grant(a,"throwable:throwable_timber");assertEquals("throwable_timber",profiles.equipment(a,"throwable","throwable_timber").equippedThrowableId());
         assertNull(profiles.equipment(a,"throwable",null).equippedThrowableId());
+        assertThrows(ApiException.class,()->profiles.equipment(a,"bubble","bubble_bunny_pink"));
+        grant(a,"bubble:bubble_bunny_pink");assertEquals("bubble_bunny_pink",profiles.equipment(a,"bubble","bubble_bunny_pink").equippedBubbleStyleId());
+        var core=new CoreFixture(db,tx);UUID id=UUID.randomUUID();var message=core.messages.send(a,room,id,"snapshot");
+        assertEquals("bubble_bunny_pink",message.bubbleStyleId());profiles.equipment(a,"bubble",null);
+        assertEquals(message,core.messages.send(a,room,id,"snapshot"));
     }
     @Test void treeInitializationNoOpAndStaleWinner() throws Exception {
         var profiles=service();UUID user=user();profiles.save(user,"나무친구","pixel_hamster");

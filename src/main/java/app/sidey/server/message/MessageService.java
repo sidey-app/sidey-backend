@@ -44,7 +44,7 @@ public class MessageService {
                 if(db.fetchOne("select count(*) from message_attempts where user_id=? and attempted_at>=clock_timestamp()-interval '10 seconds'",user).get(0,Integer.class)>=30)
                     throw new ApiException(429,"message_rate_limited");
                 db.execute("insert into message_attempts(user_id,attempted_at) values (?,clock_timestamp())",user);
-                Record equipment=db.fetchOne("select p.equipped_bubble_style_id from profiles p join commerce_products c on c.catalog_item_id=p.equipped_bubble_style_id and c.product_kind='bubble_style' and c.active join commerce_entitlements e on e.entitlement_key=c.entitlement_key and e.user_id=p.id and e.status='active' where p.id=?",user);
+                Record equipment=db.fetchOne("select p.equipped_bubble_style_id from profiles p join commerce_products c on c.catalog_item_id=p.equipped_bubble_style_id and c.product_kind='bubble' and c.active join commerce_entitlements e on e.entitlement_key=c.entitlement_key and e.user_id=p.id and e.status='active' where p.id=?",user);
                 String bubble=equipment==null?null:equipment.get(0,String.class);
                 return map(db.fetchOne("insert into messages(id,room_id,sender_id,body,bubble_style_id,created_at) values (?,?,?,?,?,greatest(clock_timestamp(),(select max(created_at)+interval '1 microsecond' from messages where room_id=?))) returning *",id,room,user,normalized,bubble,room));
             }));
