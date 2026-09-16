@@ -116,5 +116,19 @@ Nginx syntax/REST/WS/private-route/log checks passed. Shell/source/diff checks
 passed. Target Linux nerdctl/containerd image execution and existing host config
 integration were not run on this macOS host.
 
-Remaining: phase 19. Provider production calls and target-host native/container
-verification are distinct from passing local deterministic contract checks.
+Phase 19 complete within the available local environment: `./mvnw -q clean verify`
+passed 73 tests, zero failures/errors/skips. The new real HTTP/JWT/WS/PostgreSQL
+end-to-end journey exercises login/rotation, legacy ownership proof/UUID retention,
+profile, room create/join, normal chat, lost ACK canonical retry/conflict,
+subscribe-first live/cursor merge, multi-device presence, typing, kick denial,
+owner leave/account-deletion succession, logout socket close and provider-verified
+commerce entitlement. External identity/payment providers alone are deterministic
+test doubles. Executable jar inspection confirms these doubles are not packaged.
+Migration, concurrency, schema, cryptographic rejection and deployment tests are
+included in the clean run. Source guards, deployment operator tests and diff checks
+also passed. See VALIDATION.md for exact commands, branches and external gaps.
+
+No production import, external payment, release upload, remote push/merge or
+production cutover was performed. Native macOS/XCTest, WinUI execution and Linux
+containerd deployment validation remain environment-dependent and are not claimed
+as passing. Client branches remain separate pending their required native checks.
