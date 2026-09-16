@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: sidey-server
+  datasource:
+    url: ${SIDEY_DATABASE_URL:jdbc:postgresql://127.0.0.1:55432/sidey}
+    username: ${SIDEY_DATABASE_USER:sidey}
+    password: ${SIDEY_DATABASE_PASSWORD:}
+    hikari:
+      maximum-pool-size: 12
+      minimum-idle: 2
+      connection-timeout: 5000
+  flyway:
+    clean-disabled: true
+  jooq:
+    sql-dialect: POSTGRES
+server:
+  shutdown: graceful
+  tomcat:
+    max-http-form-post-size: 262144
+    threads:
+      max: 64
+spring.lifecycle.timeout-per-shutdown-phase: 20s
+management:
+  server:
+    port: ${SIDEY_MANAGEMENT_PORT:9090}
+    address: ${SIDEY_MANAGEMENT_ADDRESS:127.0.0.1}
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+logging:
+  structured:
+    format:
+      console: logstash
+  level:
+    org.jooq.tools.LoggerListener: OFF
