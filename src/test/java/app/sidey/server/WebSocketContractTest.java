@@ -62,6 +62,17 @@ class WebSocketContractTest {
             assertEquals("membership_required",listener.next(json).get("code").asString());
             socket.sendText("{\"type\":\"ping\"}",true).join();
             assertEquals("pong",listener.next(json).get("type").asString());
+            UUID messageId=UUID.randomUUID();
+            String send="{\"type\":\"message.send\",\"requestId\":\"send\",\"roomId\":\""+room+"\",\"id\":\""+messageId+"\",\"body\":\"hello\"}";
+            socket.sendText(send,true).join();
+            JsonNode ack=listener.next(json);
+            assertEquals("message.ack",ack.get("type").asString());
+            assertEquals(messageId.toString(),ack.get("message").get("id").asString());
+            assertEquals("message.created",listener.next(json).get("type").asString());
+            socket.sendText(send,true).join();
+            assertEquals(ack.get("message"),listener.next(json).get("message"));
+            assertEquals("message.created",listener.next(json).get("type").asString());
+            assertEquals(1,db.fetchOne("select count(*) from messages where id=?",messageId).get(0,Integer.class));
             auth.logout(sid);
             assertEquals(1008,listener.closed.get(5,TimeUnit.SECONDS));
             assertThrows(ApiException.class,()->connections.user(connection));

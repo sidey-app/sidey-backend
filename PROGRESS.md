@@ -17,5 +17,11 @@ was incomplete: missing registry method, ambiguous test assertion and duplicate
 Spring bean name were repaired. HTTP/WebSocket test exercises real handshake,
 membership denial, subscription acknowledgement and logout socket termination.
 
-Remaining: phases 7–19. Production provider calls require deployment credentials;
+Phase 7 complete: WS message command/ACK/publication, narrow membership locks,
+same-UUID canonical retry/conflict, rate limit, cursor history and three-day pruning.
+`./mvnw -q verify`: 45 tests passed; source guardrails and diff check passed.
+Tests include concurrent same UUID, send-before-kick ordering, unrelated sender
+progress, transaction rollback, lost response retry and 125-message pagination.
+
+Remaining: phases 8–19. Production provider calls require deployment credentials;
 local provider contracts use deterministic test doubles.
