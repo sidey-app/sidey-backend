@@ -55,7 +55,10 @@ public class UserService {
                         +"updated_at=now() where user_id=?",user);
                 db.execute("update app_store_transactions set user_id=null,binding_state='unbound',updated_at=now() where user_id=?",user);
                 db.execute("delete from users where id=?",user);
-                affected.forEach(room->events.publishEvent(new app.sidey.server.common.StructureChanged(room,user)));
+                affected.forEach(room->{
+                    events.publishEvent(new app.sidey.server.common.RoomRevoked(room,java.util.Set.of(user)));
+                    events.publishEvent(new app.sidey.server.common.StructureChanged(room,user));
+                });
                 return null;
             }));
         });

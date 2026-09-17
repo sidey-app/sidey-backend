@@ -28,12 +28,13 @@ public class ConnectionRegistry implements RoomEventPublisher, RoomMembershipBou
     private final ObjectMapper json;
     private final Executor executor;
     private final CoordinationLocks coordination;
+    private final RoomMembershipBoundary boundary;
     public interface Lifecycle { void opened(String id,UUID user,UUID sid); void closed(String id); }
     private final java.util.concurrent.CopyOnWriteArrayList<Lifecycle> lifecycle=new java.util.concurrent.CopyOnWriteArrayList<>();
     public void observe(Lifecycle listener){lifecycle.add(listener);}
     public ConnectionRegistry(MembershipRegistry members,RoomMembershipBoundary boundary,AuthService auth,ObjectMapper json,
             Executor realtimeExecutor,CoordinationLocks coordination,MeterRegistry metrics) {
-        this.members=members;this.auth=auth;this.json=json;this.executor=realtimeExecutor;this.coordination=coordination;
+        this.members=members;this.auth=auth;this.json=json;this.executor=realtimeExecutor;this.coordination=coordination;this.boundary=boundary;
         boundary.observe(this);
         metrics.gauge("sidey.ws.connections",connections,Map::size);
         metrics.gauge("sidey.ws.subscriptions",this,r->r.connections.values().stream().mapToInt(s->s.rooms.size()).sum());
@@ -102,6 +103,26 @@ public class ConnectionRegistry implements RoomEventPublisher, RoomMembershipBou
         connections.values().stream().filter(s->!current.contains(s.user)).forEach(s->s.rooms.remove(room));
     }
     @Override public void invalidate(UUID room) { connections.values().forEach(s->s.rooms.remove(room)); }
+    @TransactionalEventListener public void roomRevoked(RoomRevoked event) {
+        Runnable delivery=()->{
+            // AFTER_COMMIT still runs inside the mutation's JVM write boundary.
+            // Wait for registry synchronization, then release the read boundary
+            // before enqueueing (overflow may close a socket synchronously).
+            List<Map.Entry<String,State>> targets=boundary.read(event.roomId(),()->
+                connections.entrySet().stream().filter(e->event.users().contains(e.getValue().user)).toList());
+            String payload=json.writeValueAsString(Map.of("type","room.revoked","roomId",event.roomId()));
+            for(var target:targets) {
+                State state=target.getValue();
+                state.outbound.enqueue(payload,true,()->connections.get(target.getKey())==state);
+            }
+        };
+        try { executor.execute(delivery); }
+        catch(RejectedExecutionException overloaded) {
+            // Control delivery/queue failure may disconnect a client for recovery,
+            // but must never undo revocation or perform I/O on the mutation thread.
+            Thread.startVirtualThread(delivery);
+        }
+    }
     @TransactionalEventListener public void revoked(SessionEvents event) {
         connections.forEach((id,state)->{if(state.sid.equals(event.sessionId())) {
             if(!connections.remove(id,state))return;capacity.release();state.rooms.clear();

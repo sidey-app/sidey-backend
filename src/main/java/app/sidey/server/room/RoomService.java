@@ -72,13 +72,19 @@ public class RoomService {
     }));}
     public UUID leave(UUID user,UUID room){return userCoordinated(user,()->boundary.mutate(room,()->tx.run(()->{auth.active(user);userLock(user);lockRoom(room);member(room,user);return removeMembership(room,user); })));}
     public void kick(UUID user,UUID room,UUID target){if(user.equals(target))throw new ApiException(400,"owner_must_leave");boundary.mutate(room,()->tx.run(()->{auth.active(user);owner(room,user);member(room,target);removeMembership(room,target);return null;}));}
-    public void delete(UUID user,UUID room){userCoordinated(user,()->boundary.mutate(room,()->tx.run(()->{auth.active(user);userLock(user);owner(room,user);db.execute("delete from rooms where id=?",room);changed(room,null);return null;})));}
+    public void delete(UUID user,UUID room){userCoordinated(user,()->boundary.mutate(room,()->tx.run(()->{
+        auth.active(user);userLock(user);owner(room,user);
+        Set<UUID> removed=Set.copyOf(db.fetch("select user_id from room_members where room_id=?",room).getValues("user_id",UUID.class));
+        db.execute("delete from rooms where id=?",room);
+        events.publishEvent(new RoomRevoked(room,removed));changed(room,null);return null;
+    })));}
 
     /** Internal operation: caller holds the room boundary and database transaction. */
     public UUID removeMembership(UUID room,UUID user){
         Record r=db.fetchOne("select owner_id from rooms where id=? for no key update",room);
         if(r==null)return null;
         if(db.execute("delete from room_members where room_id=? and user_id=?",room,user)==0)return r.get("owner_id",UUID.class);
+        events.publishEvent(new RoomRevoked(room,Set.of(user)));
         Record next=db.fetchOne("select user_id from room_members where room_id=? order by joined_at,user_id limit 1",room);
         if(next==null){db.execute("delete from rooms where id=?",room);changed(room,user);return null;}
         UUID successor=next.get("user_id",UUID.class);

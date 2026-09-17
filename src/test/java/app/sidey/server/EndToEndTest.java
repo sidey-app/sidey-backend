@@ -6,6 +6,7 @@ import app.sidey.server.auth.verifier.*;
 import app.sidey.server.commerce.PaymentProvider;
 import app.sidey.server.common.*;
 import app.sidey.server.realtime.ConnectionRegistry;
+import app.sidey.server.room.RoomMembershipBoundary;
 import java.net.*;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
@@ -69,7 +70,10 @@ class EndToEndTest {
     @Autowired ServingState serving;
     @Autowired ConnectionRegistry connections;
     @Autowired CommerceTest.Provider provider;
+    @Autowired RoomMembershipBoundary membershipBoundary;
     final HttpClient http=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
+
+    @AfterEach void closeTestConnections() { connections.closeAll(1001,"test_finished"); }
 
     @AfterAll void cleanup() throws Exception {
         serving.stopAccepting();connections.closeAll(1012,"test_finished");
@@ -167,6 +171,107 @@ class EndToEndTest {
         }
     }
 
+    @Test void kickDeliversDirectRevokeToSubscribedAndUnsubscribedDevicesAfterAuthorizationRemoval() throws Exception {
+        JsonNode owner=profiledLogin("kick-owner"),peer=profiledLogin("kick-peer");
+        String user=peer.path("userId").asString();
+        JsonNode created=call("POST","/rooms",token(owner),Map.of("name","kick control"),200);
+        String room=created.path("room").path("id").asString();UUID roomId=UUID.fromString(room);
+        call("POST","/rooms/join",token(peer),Map.of("inviteCode",created.path("inviteCode").asString()),200);
+        try(var subscribed=socket(peer);var unsubscribed=socket(peer);var remaining=socket(owner)) {
+            subscribed.subscribe(room);remaining.subscribe(room);
+            assertTrue(connections.subscriptions(unsubscribed.connectionId).isEmpty());
+            call("DELETE","/rooms/"+room+"/members/"+user,token(owner),null,200);
+            assertEquals(0,db.fetchOne("select count(*) from room_members where room_id=? and user_id=?",roomId,UUID.fromString(user)).get(0,Integer.class));
+            assertFalse(connections.subscriptions(subscribed.connectionId).contains(roomId));
+            assertEquals(room,subscribed.untilType("room.revoked").path("roomId").asString());
+            assertEquals(room,unsubscribed.untilType("room.revoked").path("roomId").asString());
+            assertEquals(room,remaining.untilType("room.changed").path("roomId").asString());
+            call("GET","/rooms/"+room,token(peer),null,403);
+            call("GET","/rooms/"+room+"/messages",token(peer),null,403);
+            assertTrue(call("GET","/rooms",token(peer),null,200).isEmpty());
+            subscribed.send(Map.of("type","subscribe","roomId",room));
+            assertEquals("membership_required",subscribed.untilType("error").path("code").asString());
+            subscribed.send(Map.of("type","typing","roomId",room,"active",true));
+            assertEquals("membership_required",subscribed.untilType("error").path("code").asString());
+            subscribed.send(Map.of("type","message.send","roomId",room,"id",UUID.randomUUID().toString(),"body","after kick"));
+            assertEquals("membership_required",subscribed.untilType("error").path("code").asString());
+            // A failed notification is not needed for reconnect authorization either.
+            try(var reconnected=socket(peer)) {
+                reconnected.send(Map.of("type","subscribe","roomId",room));
+                assertEquals("membership_required",reconnected.untilType("error").path("code").asString());
+            }
+        }
+    }
+
+    @Test void ownerLeaveAndRoomDeletionRevokeDepartedUsersWithoutRevokingSuccessor() throws Exception {
+        JsonNode owner=profiledLogin("leave-owner"),peer=profiledLogin("leave-peer");
+        JsonNode created=call("POST","/rooms",token(owner),Map.of("name","leave control"),200);
+        String room=created.path("room").path("id").asString();
+        call("POST","/rooms/join",token(peer),Map.of("inviteCode",created.path("inviteCode").asString()),200);
+        try(var departing=socket(owner);var successor=socket(peer)) {
+            departing.subscribe(room);successor.subscribe(room);
+            assertEquals(peer.path("userId").asString(),call("POST","/rooms/"+room+"/leave",token(owner),null,200).path("successorId").asString());
+            assertEquals(room,departing.untilType("room.revoked").path("roomId").asString());
+            assertTrue(connections.subscriptions(successor.connectionId).contains(UUID.fromString(room)));
+            assertEquals(peer.path("userId").asString(),call("GET","/rooms/"+room,token(peer),null,200).path("ownerId").asString());
+            successor.message(room,UUID.randomUUID().toString(),"still authorized");
+            assertFalse(successor.received.stream().anyMatch(e->"room.revoked".equals(e.path("type").asString())));
+            // Rejoin before explicit deletion so every member must get the control event.
+            call("POST","/rooms/join",token(owner),Map.of("inviteCode",created.path("inviteCode").asString()),200);
+            departing.subscribe(room);
+            call("DELETE","/rooms/"+room,token(peer),null,200);
+            assertEquals(room,departing.untilType("room.revoked").path("roomId").asString());
+            assertEquals(room,successor.untilType("room.revoked").path("roomId").asString());
+            assertTrue(call("GET","/rooms",token(owner),null,200).isEmpty());
+            assertTrue(call("GET","/rooms",token(peer),null,200).isEmpty());
+        }
+    }
+
+    @Test void failedDirectRevokeDeliveryCannotRestoreMembershipAndRunsOutsideTransactionAndRoomLock() throws Exception {
+        JsonNode owner=profiledLogin("failure-owner"),peer=profiledLogin("failure-peer");
+        JsonNode created=call("POST","/rooms",token(owner),Map.of("name","failure control"),200);
+        String room=created.path("room").path("id").asString();UUID roomId=UUID.fromString(room);
+        UUID user=UUID.fromString(peer.path("userId").asString());
+        call("POST","/rooms/join",token(peer),Map.of("inviteCode",created.path("inviteCode").asString()),200);
+        var socket=org.mockito.Mockito.mock(org.springframework.web.socket.WebSocketSession.class);
+        String id="failed-revoke-"+UUID.randomUUID();
+        org.mockito.Mockito.when(socket.getId()).thenReturn(id);
+        org.mockito.Mockito.when(socket.isOpen()).thenReturn(true);
+        var attempted=new CountDownLatch(1);var closed=new CountDownLatch(1);
+        var observation=new java.util.concurrent.atomic.AtomicReference<Throwable>();
+        org.mockito.Mockito.doAnswer(invocation->{
+            try {
+                var frame=(org.springframework.web.socket.TextMessage)invocation.getArgument(0);
+                assertEquals("room.revoked",json.readTree(frame.getPayload()).path("type").asString());
+                assertFalse(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive());
+                // Another thread can take the exclusive gate while socket I/O executes.
+                CompletableFuture.runAsync(()->membershipBoundary.write(roomId,()->null)).get(2,TimeUnit.SECONDS);
+                assertFalse(connections.subscriptions(id).contains(roomId));
+                assertEquals(0,db.fetchOne("select count(*) from room_members where room_id=? and user_id=?",roomId,user).get(0,Integer.class));
+            } catch(Throwable failure) {observation.set(failure);}
+            finally {attempted.countDown();}
+            throw new java.io.IOException("simulated failed control delivery");
+        }).when(socket).sendMessage(org.mockito.ArgumentMatchers.any());
+        org.mockito.Mockito.doAnswer(invocation->{closed.countDown();return null;}).when(socket).close(org.mockito.ArgumentMatchers.any());
+        connections.open(socket,user,UUID.fromString(peer.path("sessionId").asString()));
+        connections.subscribe(id,roomId);
+        call("DELETE","/rooms/"+room+"/members/"+user,token(owner),null,200);
+        assertTrue(attempted.await(5,TimeUnit.SECONDS));assertTrue(closed.await(5,TimeUnit.SECONDS));
+        assertNull(observation.get(),()->String.valueOf(observation.get()));
+        call("GET","/rooms/"+room,token(peer),null,403);
+        assertTrue(call("GET","/rooms",token(peer),null,200).isEmpty());
+        try(var reconnected=socket(peer)) {
+            reconnected.send(Map.of("type","subscribe","roomId",room));
+            assertEquals("membership_required",reconnected.untilType("error").path("code").asString());
+        }
+    }
+
+    private JsonNode profiledLogin(String label)throws Exception {
+        JsonNode session=login(label+UUID.randomUUID(),"OTHER");
+        call("PUT","/profile",token(session),Map.of("nickname","친구","characterId","pixel_hamster"),200);
+        return session;
+    }
+
     private void verifyCommerce(JsonNode session)throws Exception {
         tx.run(()->{db.execute("insert into commerce_runtime_settings(singleton,sales_enabled,payment_environment,policy_version,policy_notice) values (true,true,'test','e2e-v1',repeat('notice ',20)) on conflict(singleton) do update set sales_enabled=true,payment_environment='test',policy_version='e2e-v1',policy_notice=repeat('notice ',20)");return null;});
         JsonNode order=call("POST","/commerce/orders",token(session),Map.of("productId","character_tree","amount",1,"success",true),200);
@@ -210,9 +315,11 @@ class EndToEndTest {
     class Socket implements AutoCloseable {
         final WebSocketContractTest.Listener listener=new WebSocketContractTest.Listener();
         final WebSocket socket;
+        final String connectionId;
+        final List<JsonNode> received=new ArrayList<>();
         Socket(String token)throws Exception {
             socket=http.newWebSocketBuilder().header("Authorization","Bearer "+token).buildAsync(URI.create("ws://127.0.0.1:"+port+"/api/realtime"),listener).join();
-            untilType("connected");
+            connectionId=untilType("connected").path("connectionId").asString();
         }
         void send(Object body){socket.sendText(json.writeValueAsString(body),true).join();}
         JsonNode subscribe(String room)throws Exception {send(Map.of("type","subscribe","roomId",room,"requestId","subscribe"));return untilType("ack");}
@@ -220,7 +327,7 @@ class EndToEndTest {
         JsonNode untilType(String type)throws Exception {return until(event->type.equals(event.path("type").asString()));}
         JsonNode until(Predicate<JsonNode> predicate)throws Exception {
             long end=System.nanoTime()+TimeUnit.SECONDS.toNanos(5);
-            while(System.nanoTime()<end){String frame=listener.frames.poll(100,TimeUnit.MILLISECONDS);if(frame!=null){JsonNode event=json.readTree(frame);if(predicate.test(event))return event;}}
+            while(System.nanoTime()<end){String frame=listener.frames.poll(100,TimeUnit.MILLISECONDS);if(frame!=null){JsonNode event=json.readTree(frame);received.add(event);if(predicate.test(event))return event;}}
             throw new AssertionError("Expected realtime event not received");
         }
         @Override public void close(){socket.abort();}

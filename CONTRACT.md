@@ -9,7 +9,9 @@ WS commands: `subscribe`, `unsubscribe`, `ping`, `message.send`.
 Commands use optional `requestId` (1–128 printable characters) for correlation.
 Room commands include `roomId`; message sends additionally include `id` (UUID)
 and `body`. Errors are `{type:error, requestId?, code}`. Reuse the SAME message
-UUID for every retry of one logical send, including failures of uncertain outcome.
+UUID for every explicit retry of one failed logical send, including failures of
+uncertain outcome. A fresh send always allocates a new UUID, even if its room,
+sender and text match an earlier failed send. Retry identity is not inferred from text.
 
 Send returns `message.ack` with `message`. Room subscribers receive
 `message.created` with the same canonical message. ACK is enqueued after commit,
@@ -38,6 +40,17 @@ History defaults oldest-first and retains three days. `beforeCreatedAt`/`beforeI
 requests reverse history. Cursor timestamps retain PostgreSQL microsecond precision.
 `GET /api/rooms/{room}/messages/{id}` resolves ambiguous outcomes. Recovery beyond
 the retention window cannot resurrect intentionally deleted messages.
+
+`room.revoked` carries `roomId` and is a direct per-user control event sent after
+membership removal commits (kick, leave, room deletion, account deletion). It is
+addressed to the removed user's open connections, even without a room subscription,
+and does not use normal room fanout: removed users are no longer room recipients.
+Clients immediately discard that room's authorized, active, presence, message and
+recovery state; an authoritative snapshot/reconnect can then reconcile it. Ownership
+succession does not revoke remaining members. Account deletion also revokes sessions
+and closes their sockets, so connection closure may supersede this best-effort hint.
+DB/registry authorization is the security boundary and remains revoked if delivery
+fails. Control queue overflow closes the socket for reconnect/snapshot recovery.
 
 `room.changed` requests a fresh REST room/profile snapshot; `messages.pruned`
 invalidates expired local history. Ephemeral events are never replayed. A slow
