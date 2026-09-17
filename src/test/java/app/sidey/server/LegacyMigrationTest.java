@@ -42,6 +42,8 @@ class LegacyMigrationTest extends PostgresTest {
             db.execute("insert into "+q+".commerce_grants(id,user_id,entitlement_key,source_kind,source_reference,status,granted_at,updated_at,parent_grant_id) values (?,?,'throwable:throwable_pork','complimentary',?,'active',now(),now(),?)",child,google,"included:"+parent,parent);
             db.execute("insert into "+p+".commerce_entitlements(user_id,entitlement_key,status,granted_at,updated_at) values (?,'character:pixel_pig','active',now(),now()),(?,'throwable:throwable_pork','active',now(),now())",google,google);
             db.execute("insert into "+q+".app_store_transactions(environment,transaction_id,original_transaction_id,product_id,store_product_id,user_id,app_account_token,status,binding_state,purchased_at,signed_at,signed_data_sha256,created_at,updated_at,price_milliunits,currency,price_signed_at) values ('Sandbox','apple-old','apple-old','character_pig','character_pig',?,?,'active','bound',now(),now(),?,now(),now(),990000,'KRW',now())",google,google,Crypto.hash("signed"));
+            UUID notification=UUID.randomUUID();
+            db.execute("insert into "+q+".app_store_notification_events(notification_uuid,environment,notification_type,transaction_id,signed_at,payload_sha256,processing_status,received_at,processed_at) values (?,'Sandbox','ONE_TIME_CHARGE','apple-old',now(),?,'processed',now(),now())",notification,Crypto.hash("signed-notification"));
             db.execute("insert into "+q+".character_item_transition values (true,now()-interval '10 days')");
             db.execute("insert into "+q+".commerce_runtime_settings values (true,false,'test','legacy-policy',repeat('notice ',20),now())");
             UUID order=UUID.randomUUID();
@@ -65,6 +67,7 @@ class LegacyMigrationTest extends PostgresTest {
             assertEquals(0L,report.get("invalid_active_user_identity"));
             assertEquals(0L,report.get("orphan_fk"));
             assertTrue(report.get("foreign_keys_checked")>0);
+            java.nio.file.Files.writeString(java.nio.file.Path.of("target/migration-validation-report.json"),new tools.jackson.databind.ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(report));
             assertEquals("LEGACY_ANONYMOUS_UNCLAIMED",db.fetchOne("select status from users where id=?",anon).get(0));
             assertEquals(google,db.fetchOne("select user_id from user_identities where provider_subject='external-subject'").get(0));
             assertEquals(anon,db.fetchOne("select owner_id from rooms where id=?",room).get(0));
@@ -77,6 +80,9 @@ class LegacyMigrationTest extends PostgresTest {
             assertEquals("provider-old",db.fetchOne("select provider_payment_id from commerce_payments where order_id=?",order).get(0));
             assertEquals("active",db.fetchOne("select status from commerce_entitlements where entitlement_key='character:pixel_tree'").get(0));
             assertEquals(1L,report.get("target_commerce_refund_operations"));assertEquals(1L,report.get("target_commerce_webhook_events"));
+            assertEquals(1L,report.get("target_app_store_notification_events"));
+            assertEquals("apple-old",db.fetchOne("select transaction_id from app_store_notification_events where notification_uuid=?",notification).get(0));
+            assertArrayEquals(Crypto.hash("signed-notification"),db.fetchOne("select payload_sha256 from app_store_notification_events where notification_uuid=?",notification).get(0,byte[].class));
             try(var source=connect();var target=connect()){assertEquals(report,new LegacyMigration(source,target,a,p,q).migrate(run));}
             try(var source=connect();var target=connect()){assertThrows(SQLException.class,()->new LegacyMigration(source,target,a,p,q).migrate(UUID.randomUUID()));}
         } finally {db.execute("drop schema if exists "+a+" cascade");db.execute("drop schema if exists "+p+" cascade");db.execute("drop schema if exists "+q+" cascade");}
