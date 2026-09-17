@@ -1,0 +1,94 @@
+name: Backend validated image
+
+on:
+  push:
+    branches:
+      - integration/spring-backend-final
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: backend-image-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-and-publish:
+    if: github.ref == 'refs/heads/integration/spring-backend-final'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: sidey
+          POSTGRES_USER: sidey
+          POSTGRES_PASSWORD: sidey-disposable-ci
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U sidey -d sidey"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      SIDEY_TEST_DATABASE_URL: jdbc:postgresql://127.0.0.1:55432/sidey
+      SIDEY_TEST_DATABASE_USER: sidey
+      SIDEY_TEST_DATABASE_PASSWORD: sidey-disposable-ci
+      SIDEY_DATABASE_URL: jdbc:postgresql://127.0.0.1:55432/sidey
+      SIDEY_DATABASE_USER: sidey
+      SIDEY_DATABASE_PASSWORD: sidey-disposable-ci
+      IMAGE: ghcr.io/sidey-app/sidey-backend:sha-${{ github.sha }}
+      JAVA_IMAGE: eclipse-temurin:21-jre-jammy@sha256:bce52ea7da1f72e6bf5bec505e63b6eb55ba79ad1226903579f77eab1a80139a
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Source and deployment checks
+        run: |
+          python3 scripts/check-source.py
+          python3 -m unittest discover -s deploy -p 'test_*.py'
+          python3 -m unittest discover -s scripts/ci -p 'test_*.py'
+          sh -n deploy/build-image.sh
+          git --no-pager diff --check
+      - name: Full PostgreSQL verification and executable JAR
+        run: |
+          ./mvnw -q clean verify \
+            -Dsidey.codegen.url="$SIDEY_DATABASE_URL" \
+            -Dsidey.codegen.user="$SIDEY_DATABASE_USER" \
+            -Dsidey.codegen.password="$SIDEY_DATABASE_PASSWORD"
+          python3 scripts/ci/verify_tests.py
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - name: Build the production Containerfile locally
+        run: |
+          docker buildx build --platform linux/amd64 --load --provenance=false \
+            --file deploy/Containerfile --build-arg "JAVA_IMAGE=$JAVA_IMAGE" \
+            --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --tag "$IMAGE" .
+      - name: Smoke the image before registry authentication
+        run: python3 scripts/ci/image_smoke.py "$IMAGE" "$GITHUB_SHA"
+      - name: Publish and verify the remote immutable reference
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          export DOCKER_CONFIG
+          DOCKER_CONFIG=$(mktemp -d)
+          trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          unset GHCR_TOKEN
+          python3 scripts/ci/publish_image.py "$IMAGE" "$GITHUB_SHA"
+      - name: Record the verified image reference
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: image-reference-${{ github.sha }}
+          path: image-reference.txt
+          if-no-files-found: error
+          retention-days: 30
