@@ -20,7 +20,8 @@ class AppStoreTest extends PostgresTest {
     class Setup {
         final CoreFixture f=new CoreFixture(db,tx);final UUID user=f.user();final Verifier apple=new Verifier();
         final AppStoreService service=new AppStoreService(db,f.tx,f.auth,apple,new GrantLedger(db,f.tx,e->{}));
-        final String id=UUID.randomUUID().toString();final Instant now=Instant.now();
+        // Apple signedDate uses epoch milliseconds; nanoseconds round in PostgreSQL.
+        final String id=UUID.randomUUID().toString();final Instant now=Instant.parse("2026-09-17T00:00:00.123Z");
         Setup(){apple.value=value("Sandbox",null,now,990000L,"KRW");}
         AppleVerification.Transaction value(String env,Instant revoked,Instant signed,Long price,String currency){return new AppleVerification.Transaction(id,id,"character_guinea_pig",user,env,now.minusSeconds(100),revoked,signed,"signed:"+env+":"+signed,price,currency);}
         String status(){return db.fetchOne("select status from commerce_entitlements where user_id=? and entitlement_key='character:pixel_guinea_pig'",user).get(0,String.class);}
