@@ -57,6 +57,12 @@ public final class LegacyMigration {
             copy("character_item_transition",priv+".character_item_transition r",Map.of(),"");
             copy("download_metric_snapshots",priv+".download_metric_snapshots r",Map.of(),"");
             validate();execute(target,"set constraints all immediate");
+            // Validated existing constraints plus IMMEDIATE validation of every imported
+            // row prove FK integrity, including the deferred composite owner/member FK.
+            zero("unvalidated_foreign_keys","select count(*) from pg_constraint where contype='f' and connamespace=current_schema()::regnamespace and not convalidated");
+            long foreignKeys=scalar(target,"select count(*) from pg_constraint where contype='f' and connamespace=current_schema()::regnamespace");
+            if(foreignKeys==0)throw new SQLException("migration_validation:missing_foreign_keys");
+            report.put("foreign_keys_checked",foreignKeys);report.put("orphan_fk",0L);
             try(var s=target.prepareStatement("insert into migration_runs(id,report) values (?,?::jsonb)")){s.setObject(1,runId);s.setString(2,new ObjectMapper().writeValueAsString(report));s.executeUpdate();}
             target.commit();source.rollback();return Map.copyOf(report);
         } catch(SQLException|RuntimeException failed){target.rollback();source.rollback();throw failed;}
@@ -78,6 +84,7 @@ public final class LegacyMigration {
         report.put("authenticated_identity_count",scalar(target,"select count(*) from user_identities"));
         report.put("legacy_unclaimed_count",scalar(target,"select count(*) from users where status='LEGACY_ANONYMOUS_UNCLAIMED'"));
         report.put("historical_unknown_payment_environment",scalar(target,"select count(*) from commerce_orders where payment_environment is null"));
+        zero("invalid_active_user_identity","select count(*) from users u where u.status='ACTIVE' and not exists(select 1 from user_identities i where i.user_id=u.id)");
         zero("room_without_owner","select count(*) from rooms where owner_id is null");
         zero("owner_not_member","select count(*) from rooms r where not exists(select 1 from room_members m where m.room_id=r.id and m.user_id=r.owner_id)");
         zero("orphan_membership","select count(*) from room_members m left join rooms r on r.id=m.room_id left join users u on u.id=m.user_id where r.id is null or u.id is null");

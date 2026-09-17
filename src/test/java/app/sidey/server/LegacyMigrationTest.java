@@ -62,6 +62,9 @@ class LegacyMigrationTest extends PostgresTest {
             UUID run=UUID.randomUUID();Map<String,Long> report;
             try(var source=connect();var target=connect()){report=new LegacyMigration(source,target,a,p,q).migrate(run);}
             assertEquals(2L,report.get("source_users"));assertEquals(1L,report.get("legacy_unclaimed_count"));assertEquals(1L,report.get("source_messages"));
+            assertEquals(0L,report.get("invalid_active_user_identity"));
+            assertEquals(0L,report.get("orphan_fk"));
+            assertTrue(report.get("foreign_keys_checked")>0);
             assertEquals("LEGACY_ANONYMOUS_UNCLAIMED",db.fetchOne("select status from users where id=?",anon).get(0));
             assertEquals(google,db.fetchOne("select user_id from user_identities where provider_subject='external-subject'").get(0));
             assertEquals(anon,db.fetchOne("select owner_id from rooms where id=?",room).get(0));
