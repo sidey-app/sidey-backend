@@ -132,3 +132,14 @@ No production import, external payment, release upload, remote push/merge or
 production cutover was performed. Native macOS/XCTest, WinUI execution and Linux
 containerd deployment validation remain environment-dependent and are not claimed
 as passing. Client branches remain separate pending their required native checks.
+## Credential-free validation follow-up — 2026-09-17
+
+Resumed from committed Phases 1–19, without reimplementing them. Full final build:
+76 Java/PostgreSQL tests and 7 operator tests passing. Actual isolated Linux
+containerd image/run, Nginx and temporary Tunnel, blue/green response-loss/drain,
+cursor recovery, 1200/2500/3200 capacity and slow-consumer checks completed.
+Measured limiter hotspot fixed and compared before/after; migration report and
+Apple notification-audit fixture strengthened. See VALIDATION-2026-09-17.md and
+the non-secret results in validation/2026-09-17. Native platforms and direct
+production-host/snapshot/provider checks remain explicitly environment-blocked.
+Client branches unchanged, no remote push/merge or production cutover.

@@ -1,5 +1,8 @@
 # Implementation handoff and validation
 
+Latest actual environment results: [2026-09-17 follow-up](VALIDATION-2026-09-17.md).
+The phase-completion record below is retained as historical evidence.
+
 Validated locally on 2026-09-17. Runtime references are SIDEY f939a9a and
 sidey-backend 6c31ef4. Client worktrees use current SIDEY origin/main base 0f59ade.
 Original reference checkouts were not changed; their existing untracked exporter
@@ -142,3 +145,10 @@ human author and include the Codex co-author trailer. No hooks were bypassed.
 
 No known local test failure remains. This statement does not convert the native,
 provider or production-environment verification gaps above into passing results.
+## Follow-up actual environment validation
+
+The credential-free validation on 2026-09-17 is recorded in
+[VALIDATION-2026-09-17.md](VALIDATION-2026-09-17.md), including actual Linux
+containerd/Nginx/Tunnel, blue/green, capacity and slow-consumer results and the
+remaining native/target/provider blockers. It supersedes the corresponding
+unexecuted Linux checks above; the original phase-completion record is preserved.

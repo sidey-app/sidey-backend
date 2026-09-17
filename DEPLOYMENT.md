@@ -73,6 +73,32 @@ sockets (for example at least 8192 worker connections). Nginx forwards raw WS
 upgrade headers and uses a 75-second read timeout above the 20-second heartbeat.
 Only `/api/` is proxied: management and internal operations are never public.
 
+The Linux rehearsal hit both Nginx limits independently (768 connections, then
+1024 file descriptors per worker). Merge these settings into the **main** and
+**events** contexts of the existing configuration; do not put them in the SIDEY
+`http` include or replace unrelated configuration:
+
+```nginx
+# main context
+worker_rlimit_nofile 16384;
+events {
+    worker_connections 8192;
+    # Preserve the existing events settings.
+}
+```
+
+Validate with `nginx -t` and inspect the actual worker `/proc/<pid>/limits` after
+reload. The main Nginx process needs permission to raise the worker limit. A
+container/service hard limit below this value must be corrected in that service's
+own configuration. This is required proxy capacity, not a change to JVM limits.
+
+For an offline image transfer, `nerdctl save -o release.tar <release-tag>` followed
+by `nerdctl load -i release.tar` was exercised on containerd. Confirm the manifest
+digest with `nerdctl images --digests`. A locally built/imported tag may not have
+the digest-name alias needed by the launcher; register the **same verified** digest
+using `nerdctl tag <release-tag> <repository>@sha256:<manifest-digest>` before
+launching. Never invent a digest or infer it from the image configuration ID.
+
 ## Subsequent blue/green releases
 
 Launch the inactive slot with its new digest, then `switch green` (or blue):
