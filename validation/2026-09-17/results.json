@@ -1,0 +1,269 @@
+{
+  "environment": {
+    "kind": "isolated Lima VM",
+    "architecture": "arm64",
+    "cpu": 4,
+    "memory_gib": 4,
+    "production_cutover": "NOT PERFORMED"
+  },
+  "capacity": {
+    "1200-final": {
+      "sidey_rejected": {
+        "count": 0,
+        "rate": 0,
+        "thresholds": {
+          "count==0": false
+        }
+      },
+      "sidey_subscribed": {
+        "count": 1200,
+        "rate": 16.002187605726956,
+        "thresholds": {
+          "count==1200": false
+        }
+      },
+      "sidey_commands": {
+        "count": 61200,
+        "rate": 816.1115678920747
+      },
+      "sidey_events": {
+        "count": 697997,
+        "rate": 9307.89911852883
+      },
+      "sidey_command_errors": {
+        "count": 0,
+        "rate": 0,
+        "thresholds": {
+          "count==0": false
+        }
+      },
+      "sidey_accepted": {
+        "count": 1200,
+        "rate": 16.002187605726956,
+        "thresholds": {
+          "count==1200": false
+        }
+      },
+      "sidey_message_ack_ms": {
+        "avg": 3.385781833333315,
+        "min": 1.4170000000012806,
+        "med": 2.894000000000233,
+        "max": 81.40699999999924,
+        "p(90)": 4.534100000000035,
+        "p(95)": 5.525049999999737
+      },
+      "sidey_unexpected_close": {
+        "count": 0,
+        "rate": 0,
+        "thresholds": {
+          "count==0": false
+        }
+      }
+    },
+    "2500-before": {
+      "sidey_commands": {
+        "count": 127500,
+        "rate": 1700.0764127678326
+      },
+      "sidey_message_ack_ms": {
+        "p(95)": 239.78680000000347,
+        "avg": 30.340116159999948,
+        "min": 1.6980000000003201,
+        "med": 9.01249999999709,
+        "max": 486.21199999999953,
+        "p(90)": 44.742099999997315
+      },
+      "sidey_accepted": {
+        "count": 2500,
+        "rate": 33.334831622898676
+      },
+      "sidey_events": {
+        "count": 1450365,
+        "rate": 19339.069226698175
+      },
+      "sidey_subscribed": {
+        "rate": 33.334831622898676,
+        "count": 2500
+      }
+    },
+    "2500-after": {
+      "sidey_events": {
+        "count": 1451800,
+        "rate": 19358.403207750613
+      },
+      "sidey_commands": {
+        "count": 127500,
+        "rate": 1700.0939585261078
+      },
+      "sidey_message_ack_ms": {
+        "min": 1.7870000000039,
+        "med": 6.5900000000001455,
+        "max": 136.09299999999894,
+        "p(90)": 14.815199999999095,
+        "p(95)": 19.893949999999847,
+        "avg": 8.594392639999995
+      },
+      "sidey_subscribed": {
+        "count": 2500,
+        "rate": 33.33517565737466,
+        "thresholds": {
+          "count==2500": false
+        }
+      },
+      "sidey_rejected": {
+        "count": 0,
+        "rate": 0,
+        "thresholds": {
+          "count==0": false
+        }
+      },
+      "sidey_unexpected_close": {
+        "count": 0,
+        "rate": 0,
+        "thresholds": {
+          "count==0": false
+        }
+      },
+      "sidey_command_errors": {
+        "count": 0,
+        "rate": 0,
+        "thresholds": {
+          "count==0": false
+        }
+      },
+      "sidey_accepted": {
+        "count": 2500,
+        "rate": 33.33517565737466,
+        "thresholds": {
+          "count==2500": false
+        }
+      }
+    },
+    "3200-final": {
+      "sidey_events": {
+        "rate": 163.64577475610096,
+        "count": 9000
+      },
+      "sidey_accepted": {
+        "count": 3000,
+        "rate": 54.54859158536699,
+        "thresholds": {
+          "count==3000": false
+        }
+      },
+      "sidey_rejected": {
+        "rate": 3.6365727723577996,
+        "count": 200,
+        "thresholds": {
+          "count==200": false
+        }
+      },
+      "sidey_unexpected_close": {
+        "count": 0,
+        "rate": 0,
+        "thresholds": {
+          "count==0": false
+        }
+      },
+      "sidey_commands": {
+        "rate": 109.09718317073398,
+        "count": 6000
+      },
+      "sidey_subscribed": {
+        "count": 3000,
+        "rate": 54.54859158536699,
+        "thresholds": {
+          "count==3000": false
+        }
+      },
+      "sidey_command_errors": {
+        "count": 0,
+        "rate": 0,
+        "thresholds": {
+          "count==0": false
+        }
+      }
+    }
+  },
+  "profile": {
+    "before": {
+      "execution_samples": 2980,
+      "limiter_samples": 1734,
+      "limiter_percent": 58.18791946308725,
+      "plateau_cpu_mean": 0.2527006915309391,
+      "peak_heap_bytes": 438952296.0,
+      "peak_queued_bytes": 13291.0,
+      "hikari_pending_max": 0.0,
+      "hikari_timeouts": 0.0
+    },
+    "after": {
+      "execution_samples": 1298,
+      "limiter_samples": 5,
+      "limiter_percent": 0.3852080123266564,
+      "plateau_cpu_mean": 0.19996701915778659,
+      "peak_heap_bytes": 455046064.0,
+      "peak_queued_bytes": 96969.0,
+      "hikari_pending_max": 1.0,
+      "hikari_timeouts": 0.0
+    }
+  },
+  "blue_green": {
+    "private_routes_through_nginx": "404",
+    "rest_through_nginx": "PASS",
+    "provider_fail_closed": {
+      "GOOGLE": {
+        "status": 401,
+        "code": "identity_provider_unavailable"
+      },
+      "APPLE": {
+        "status": 401,
+        "code": "identity_provider_unavailable"
+      },
+      "APP_STORE": {
+        "status": 503,
+        "code": "apple_not_configured"
+      },
+      "PORTONE_WEBHOOK": {
+        "status": 503,
+        "code": "commerce_not_configured"
+      }
+    },
+    "lost_activation_response_rollback": "PASS; old active, candidate quiescent, WS 1012",
+    "unreachable_rollback_fail_closed": "PASS; old stayed disabled, no simultaneous writer",
+    "inactive_scheduled_maintenance": "PASS; expired message/session unchanged for 65 seconds",
+    "successful_switch_recovery": "PASS; WS1012, old stopped, subscribe/history/retry/presence rebuilt",
+    "inflight_drain": "PASS; waited for real PostgreSQL membership lock, committed without ACK, recovered after cursor"
+  },
+  "presence_limits": {
+    "per_user_accepted": 16,
+    "overflow_close": 1008,
+    "aggregation": "ONLINE > AWAY > OFFLINE",
+    "dead_session_removed_seconds": 60.196,
+    "reconnect": "PASS"
+  },
+  "slow_consumer": {
+    "healthy_acks": 11715,
+    "healthy_errors": [],
+    "ack_p95_ms": 37.28066700000454,
+    "ack_max_ms": 52.573291000044264,
+    "slow_close_code": 1006
+  },
+  "slow_recovery": {
+    "post_slow_consumer_recovery": "PASS",
+    "pages": 26,
+    "unique_messages": 5104,
+    "database_messages": 5104
+  },
+  "tunnel": {
+    "https_rest": "PASS",
+    "wss_subscribe_heartbeat": "PASS",
+    "private_routes": "404",
+    "production_route": "NOT USED"
+  },
+  "java_tests": {
+    "tests": 76,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+}

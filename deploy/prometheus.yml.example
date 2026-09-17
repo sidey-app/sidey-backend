@@ -1,0 +1,10 @@
+# Merge into existing scrape_configs. Ports remain loopback-only on the host.
+scrape_configs:
+  - job_name: sidey-server
+    metrics_path: /actuator/prometheus
+    scrape_interval: 20s
+    static_configs:
+      - targets: ['127.0.0.1:9081']
+        labels: {slot: blue}
+      - targets: ['127.0.0.1:9082']
+        labels: {slot: green}

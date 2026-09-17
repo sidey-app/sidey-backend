@@ -1,0 +1,7 @@
+ARG JAVA_IMAGE=eclipse-temurin:21-jre-jammy
+FROM ${JAVA_IMAGE}
+WORKDIR /app
+COPY target/sidey-server-0.1.0-SNAPSHOT.jar /app/sidey-server.jar
+USER 10001:10001
+ENV JAVA_TOOL_OPTIONS="-Xms256m -Xmx768m -XX:+ExitOnOutOfMemoryError"
+ENTRYPOINT ["java", "-jar", "/app/sidey-server.jar"]

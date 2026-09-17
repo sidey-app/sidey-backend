@@ -1,0 +1,80 @@
+spring:
+  application:
+    name: sidey-server
+  datasource:
+    url: ${SIDEY_DATABASE_URL:jdbc:postgresql://127.0.0.1:55432/sidey}
+    username: ${SIDEY_DATABASE_USER:sidey}
+    password: ${SIDEY_DATABASE_PASSWORD:}
+    hikari:
+      maximum-pool-size: 12
+      minimum-idle: 2
+      connection-timeout: 5000
+  flyway:
+    clean-disabled: true
+  jooq:
+    sql-dialect: POSTGRES
+server:
+  address: ${SIDEY_SERVER_ADDRESS:127.0.0.1}
+  port: ${SIDEY_SERVER_PORT:8080}
+  shutdown: graceful
+  tomcat:
+    max-http-form-post-size: 262144
+    threads:
+      max: 64
+spring.lifecycle.timeout-per-shutdown-phase: 20s
+management:
+  server:
+    port: ${SIDEY_MANAGEMENT_PORT:9090}
+    address: ${SIDEY_MANAGEMENT_ADDRESS:127.0.0.1}
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+logging:
+  structured:
+    format:
+      console: logstash
+  level:
+    org.jooq.tools.LoggerListener: OFF
+sidey:
+  serving:
+    enabled: ${SIDEY_SERVING_ENABLED:true}
+  deployment:
+    key: ${SIDEY_DEPLOYMENT_KEY:}
+  auth:
+    jwt-secret: ${SIDEY_JWT_SECRET:}
+    issuer: ${SIDEY_JWT_ISSUER:sidey}
+    audience: sidey-api
+    google-audiences: ${SIDEY_GOOGLE_AUDIENCES:}
+    apple-audiences: ${SIDEY_APPLE_AUDIENCES:}
+    legacy-supabase-origin: ${SIDEY_LEGACY_SUPABASE_ORIGIN:}
+    legacy-supabase-api-key: ${SIDEY_LEGACY_SUPABASE_API_KEY:}
+
+  room:
+    invite-pepper: ${SIDEY_INVITE_PEPPER}
+  commerce:
+    portone-secret: ${PORTONE_API_SECRET:}
+    portone-webhook-secret: ${PORTONE_WEBHOOK_SECRET:}
+    portone-store: ${PORTONE_STORE_ID:}
+    portone-channel: ${PORTONE_CHANNEL_KEY:}
+    ops-key: ${SIDEY_COMMERCE_OPS_KEY:}
+    website: ${SIDEY_WEBSITE_URL:https://sidey-app.github.io/SIDEY/}
+    web-origin: ${SIDEY_WEBSITE_ORIGIN:https://sidey-app.github.io}
+  apple:
+    bundle-id: ${APPLE_BUNDLE_ID:}
+    app-id: ${APPLE_APP_ID:0}
+    root-certificates: ${APPLE_ROOT_CERTIFICATES:}
+    private-key-file: ${APPLE_IAP_PRIVATE_KEY_FILE:}
+    key-id: ${APPLE_IAP_KEY_ID:}
+    issuer-id: ${APPLE_IAP_ISSUER_ID:}
+    sign-in-client-id: ${APPLE_SIGN_IN_CLIENT_ID:}
+    sign-in-key-id: ${APPLE_SIGN_IN_KEY_ID:}
+    sign-in-team-id: ${APPLE_SIGN_IN_TEAM_ID:}
+    sign-in-private-key-file: ${APPLE_SIGN_IN_PRIVATE_KEY_FILE:}
