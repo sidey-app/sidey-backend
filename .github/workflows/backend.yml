@@ -36,6 +36,8 @@ jobs:
         run: python3 -m unittest discover -s scripts/tests -p 'test_*.py'
       - name: Test public release metrics collection
         run: node --test scripts/download-metrics/*.test.mjs
+      - name: Test PortOne client contracts
+        run: node --experimental-transform-types --test supabase/functions/_shared/commerce.test.mjs
       - name: Install verifier dependencies
         working-directory: services/app-store-verifier
         run: npm ci

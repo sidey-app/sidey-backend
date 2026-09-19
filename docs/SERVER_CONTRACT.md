@@ -113,3 +113,16 @@ RPC는 캐릭터 선택과 별개인 계정 설정이며 다른 캐릭터를 선
 퇴역시키고 2,200원 가격을 추가한다. 기존 migration은 수정하지 않으며 대기 중인
 1,100원 주문과 더 오래된 1,900원 주문도 원래 금액으로 처리한다. 별빛 구슬은 별도
 1,100원 상품이다. [Cloud Console·App Store 등록 인계](CONTENT_RELEASE_HANDOFF.md)를 따른다.
+
+
+## Windows PortOne 후보
+
+`get_windows_store_state()`는 인증된 사용자의 기존 `get_store_state()` 형식을 유지하되
+`commerce_products.portone_sale_enabled`가 켜진 상품만 반환한다. `create_commerce_order`
+역시 같은 플래그를 서버에서 확인한다. 초기 허용 범위는 공개 catalog commit
+`43c489ff2da69745c8bc7122795019f77ade6239`의 Windows mirror 24개다. 신규 9개와 이후
+추가 상품은 기본 비활성이며, Apple offer·기존 권리와 장착에는 영향을 주지 않는다.
+
+checkout/redirect URL은 API query override 없이 token을 fragment로 전달한다. 공개 웹은
+SIDEY 운영 origin으로만 API 요청한다. 기존 판매 잠금, 정책 동의, LIVE/TEST 검증,
+webhook 서명, entitlement·환불 멱등성은 유지한다. 이 migration은 판매를 활성화하지 않는다.

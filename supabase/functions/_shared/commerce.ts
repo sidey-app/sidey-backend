@@ -70,21 +70,8 @@ function websitePageURL(path: string): URL {
   return url;
 }
 
-function publicFunctionBaseURL(): string {
-  const configured = Deno.env.get("SIDEY_PUBLIC_SUPABASE_URL")?.trim() || supabaseURL();
-  const url = new URL(configured);
-  if (url.hostname.toLowerCase() === "whtejsviizgejauasqqt.supabase.co") {
-    throw new CommerceConfigurationError("SIDEY_PUBLIC_SUPABASE_URL");
-  }
-  url.pathname = "/functions/v1";
-  url.search = "";
-  url.hash = "";
-  return url.toString().replace(/\/$/, "");
-}
-
 export function checkoutPageURL(token: string): string {
   const url = websitePageURL("checkout/");
-  url.searchParams.set("api", publicFunctionBaseURL());
   url.hash = new URLSearchParams({ token }).toString();
   return url.toString();
 }
@@ -98,7 +85,6 @@ export function checkoutResultURL(result: string, productID?: string): string {
 
 export function checkoutRedirectURL(token: string, productID: string): string {
   const url = new URL(checkoutResultURL("complete", productID));
-  url.searchParams.set("api", publicFunctionBaseURL());
   url.hash = new URLSearchParams({ token }).toString();
   return url.toString();
 }
