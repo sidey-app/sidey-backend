@@ -30,6 +30,13 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: '2.9.7'
+      - name: Test checkout routing without credentials or network permissions
+        run: deno test supabase/functions/_shared/commerce.test.ts
+      - name: Check commerce entrypoints
+        run: deno check supabase/functions/commerce-order/index.ts supabase/functions/commerce-checkout/index.ts supabase/functions/commerce-complete/index.ts
       - name: Verify pinned backend catalog mirrors
         run: python3 scripts/commerce_catalog.py --target shared --check
       - name: Test standalone catalog generation

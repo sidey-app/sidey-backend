@@ -1,6 +1,10 @@
 import { SUPPORTED_PRODUCT_IDS } from "./commerce-products.ts";
 export { SUPPORTED_PRODUCT_IDS };
 export const PORTONE_API_BASE = "https://api.portone.io";
+const PRODUCTION_SUPABASE_HOST = "whtejsviizgejauasqqt.supabase.co";
+
+export type CommerceEnvironmentReader = (name: string) => string | undefined;
+const runtimeEnvironment: CommerceEnvironmentReader = (name) => Deno.env.get(name);
 
 export const corsHeaders = {
   "access-control-allow-origin": "*",
@@ -50,55 +54,125 @@ export type PortOnePayment = {
   method?: { type?: string };
 };
 
-function requiredEnvironment(name: string): string {
-  const value = Deno.env.get(name)?.trim();
+function environmentValue(name: string, environment: CommerceEnvironmentReader): string | undefined {
+  return environment(name)?.trim() || undefined;
+}
+
+function requiredEnvironment(
+  name: string,
+  environment: CommerceEnvironmentReader = runtimeEnvironment,
+): string {
+  const value = environmentValue(name, environment);
   if (!value) throw new CommerceConfigurationError(name);
   return value;
 }
 
-export function supabaseURL(): string {
-  return requiredEnvironment("SUPABASE_URL").replace(/\/$/, "");
+export function supabaseURL(environment: CommerceEnvironmentReader = runtimeEnvironment): string {
+  return requiredEnvironment("SUPABASE_URL", environment).replace(/\/$/, "");
 }
 
-function websitePageURL(path: string): URL {
-  const base = Deno.env.get("SIDEY_WEBSITE_URL")?.trim()
+function configurationURL(value: string, environmentName: string): URL {
+  try {
+    return new URL(value);
+  } catch {
+    throw new CommerceConfigurationError(environmentName);
+  }
+}
+
+function websitePageURL(path: string, environment: CommerceEnvironmentReader): URL {
+  const base = environmentValue("SIDEY_WEBSITE_URL", environment)
     || "https://sidey-app.github.io/SIDEY/";
-  const url = new URL(path, base.endsWith("/") ? base : `${base}/`);
-  if (url.protocol !== "http:" && url.protocol !== "https:") {
+  const baseURL = configurationURL(base.endsWith("/") ? base : `${base}/`, "SIDEY_WEBSITE_URL");
+  const hostname = baseURL.hostname.toLowerCase();
+  const loopback = baseURL.protocol === "http:"
+    && ["localhost", "127.0.0.1", "[::1]"].includes(hostname);
+  const hosted = baseURL.protocol === "https:" && baseURL.port === "";
+  if (
+    (!loopback && !hosted)
+    || baseURL.username !== ""
+    || baseURL.password !== ""
+    || baseURL.search !== ""
+    || baseURL.hash !== ""
+  ) {
     throw new CommerceConfigurationError("SIDEY_WEBSITE_URL");
   }
+  return new URL(path, baseURL);
+}
+
+function normalizedFunctionBaseURL(value: string, environmentName: string): URL {
+  const url = configurationURL(value, environmentName);
+  const hostname = url.hostname.toLowerCase();
+  const loopback = url.protocol === "http:"
+    && ["localhost", "127.0.0.1", "[::1]"].includes(hostname);
+  const hosted = url.protocol === "https:"
+    && url.port === ""
+    && hostname.length > ".supabase.co".length
+    && hostname.endsWith(".supabase.co");
+  if (
+    (!loopback && !hosted)
+    || url.username !== ""
+    || url.password !== ""
+    || url.search !== ""
+    || url.hash !== ""
+    || !["/", "/functions/v1", "/functions/v1/"].includes(url.pathname)
+  ) {
+    throw new CommerceConfigurationError(environmentName);
+  }
+  url.pathname = "/functions/v1";
   return url;
 }
 
-function publicFunctionBaseURL(): string {
-  const configured = Deno.env.get("SIDEY_PUBLIC_SUPABASE_URL")?.trim() || supabaseURL();
-  const url = new URL(configured);
-  if (url.hostname.toLowerCase() === "whtejsviizgejauasqqt.supabase.co") {
+function publicFunctionBaseURL(environment: CommerceEnvironmentReader): string | null {
+  const backendURL = normalizedFunctionBaseURL(supabaseURL(environment), "SUPABASE_URL");
+  const configuredPublicURL = environmentValue("SIDEY_PUBLIC_SUPABASE_URL", environment);
+  const publicURL = normalizedFunctionBaseURL(
+    configuredPublicURL || backendURL.origin,
+    configuredPublicURL ? "SIDEY_PUBLIC_SUPABASE_URL" : "SUPABASE_URL",
+  );
+  const backendIsProduction = backendURL.hostname.toLowerCase() === PRODUCTION_SUPABASE_HOST;
+  const publicIsProduction = publicURL.hostname.toLowerCase() === PRODUCTION_SUPABASE_HOST;
+  if (backendIsProduction && !publicIsProduction) {
     throw new CommerceConfigurationError("SIDEY_PUBLIC_SUPABASE_URL");
   }
-  url.pathname = "/functions/v1";
-  url.search = "";
-  url.hash = "";
-  return url.toString().replace(/\/$/, "");
+  if (publicIsProduction) {
+    if (!backendIsProduction || publicURL.origin !== backendURL.origin) {
+      throw new CommerceConfigurationError("SIDEY_PUBLIC_SUPABASE_URL");
+    }
+    return null;
+  }
+  return publicURL.toString().replace(/\/$/, "");
 }
 
-export function checkoutPageURL(token: string): string {
-  const url = websitePageURL("checkout/");
-  url.searchParams.set("api", publicFunctionBaseURL());
+export function checkoutPageURL(
+  token: string,
+  environment: CommerceEnvironmentReader = runtimeEnvironment,
+): string {
+  const url = websitePageURL("checkout/", environment);
+  const apiBase = publicFunctionBaseURL(environment);
+  if (apiBase) url.searchParams.set("api", apiBase);
   url.hash = new URLSearchParams({ token }).toString();
   return url.toString();
 }
 
-export function checkoutResultURL(result: string, productID?: string): string {
-  const url = websitePageURL("checkout-result/");
+export function checkoutResultURL(
+  result: string,
+  productID?: string,
+  environment: CommerceEnvironmentReader = runtimeEnvironment,
+): string {
+  const url = websitePageURL("checkout-result/", environment);
   url.searchParams.set("result", result);
   if (productID && SUPPORTED_PRODUCT_IDS.has(productID)) url.searchParams.set("product", productID);
   return url.toString();
 }
 
-export function checkoutRedirectURL(token: string, productID: string): string {
-  const url = new URL(checkoutResultURL("complete", productID));
-  url.searchParams.set("api", publicFunctionBaseURL());
+export function checkoutRedirectURL(
+  token: string,
+  productID: string,
+  environment: CommerceEnvironmentReader = runtimeEnvironment,
+): string {
+  const url = new URL(checkoutResultURL("complete", productID, environment));
+  const apiBase = publicFunctionBaseURL(environment);
+  if (apiBase) url.searchParams.set("api", apiBase);
   url.hash = new URLSearchParams({ token }).toString();
   return url.toString();
 }
@@ -163,7 +237,7 @@ export function publicError(error: unknown): Response {
 }
 
 export async function sha256Hex(value: string | Uint8Array): Promise<string> {
-  const bytes = typeof value === "string" ? new TextEncoder().encode(value) : value;
+  const bytes = typeof value === "string" ? new TextEncoder().encode(value) : new Uint8Array(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }

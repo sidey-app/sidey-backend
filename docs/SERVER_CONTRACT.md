@@ -29,6 +29,11 @@ commerce는 다음 현행 계약을 유지한다. 적용된 migration과 과거 
 - PortOne V2 결제 상태에는 payment ID, Store ID, Channel Key, V2, TEST/LIVE, 상태, KRW, 서버 주문 금액, `EASY_PAY` 일치를 요구한다. event ID와 payload hash를 함께 저장해 중복 웹훅과 상충 payload를 분리한다.
 - 새 checkout은 현행 정책 버전과 제공 시작·환불 조건에 대한 동의를 기록하며 기존 주문에 저장된 결제 당시 동의 원문은 바꾸지 않는다.
 
+운영 checkout은 고정된 운영 API를 사용하는 공개 `checkout/`·`checkout-result/` 경로와
+token fragment를 사용한다. 운영과 staging의 API를 교차 지정하지 않으며, 주문 생성 전에
+URL 설정을 검증한다. 로컬·staging의 기존 API query는 별도 개발 웹에서 사용할 수 있도록
+유지한다. 이 라우팅 계약은 판매 잠금이나 TEST/LIVE 결제 검증을 변경하지 않는다.
+
 forward-only `20260903010000_character_throw.sql`은 `broadcast_character_throw(p_room_id, p_realtime_epoch, p_event_id, p_target_user_id)` 전용 RPC를 추가한다. 서버는 인증, 최신 room epoch, 송신자·대상 멤버십, 자기 자신 대상 금지와 필수 UUID를 검증하고 송신자 프로필에서 `source_character_id`를 읽는다. 송신자당 10초 20회 제한을 적용한 뒤 schema version, room/event/actor/target UUID와 source character ID만 현재 private ephemeral topic의 `character_throw`로 발행한다. 이벤트는 Postgres 메시지나 기록에 저장하지 않고 재접속 뒤 재생하지 않는다.
 
 forward-only `20260904000000_app_store_foundation.sql`은 다음 계약을 추가한다.
