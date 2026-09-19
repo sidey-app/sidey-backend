@@ -3,6 +3,7 @@ import {
   checkoutRedirectURL,
   corsHeaders,
   jsonResponse,
+  PORTONE_CHECKOUT_PAYMENT_METHOD,
   portOneChannelKey,
   portOneStoreID,
   publicError,
@@ -58,7 +59,7 @@ Deno.serve(async (request) => {
       store_id: portOneStoreID(),
       channel_key: portOneChannelKey(),
       payment_id: order.payment_id,
-      pay_method: "EASY_PAY",
+      pay_method: PORTONE_CHECKOUT_PAYMENT_METHOD,
       portone_currency: "CURRENCY_KRW",
       redirect_url: checkoutRedirectURL(token, order.product_id),
     });

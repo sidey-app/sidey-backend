@@ -1,6 +1,7 @@
 import { SUPPORTED_PRODUCT_IDS } from "./commerce-products.ts";
 export { SUPPORTED_PRODUCT_IDS };
 export const PORTONE_API_BASE = "https://api.portone.io";
+export const PORTONE_CHECKOUT_PAYMENT_METHOD = "CARD";
 const PRODUCTION_SUPABASE_HOST = "whtejsviizgejauasqqt.supabase.co";
 const PRODUCTION_WEBSITE_URL = "https://sidey-app.github.io/SIDEY/";
 
@@ -54,6 +55,8 @@ export type PortOnePayment = {
   currency: string;
   method?: { type?: string };
 };
+
+export type PortOnePaymentMethod = "CARD" | "EASY_PAY";
 
 function environmentValue(name: string, environment: CommerceEnvironmentReader): string | undefined {
   return environment(name)?.trim() || undefined;
@@ -187,12 +190,12 @@ export function checkoutRedirectURL(
   return url.toString();
 }
 
-export function portOneStoreID(): string {
-  return requiredEnvironment("PORTONE_STORE_ID");
+export function portOneStoreID(environment: CommerceEnvironmentReader = runtimeEnvironment): string {
+  return requiredEnvironment("PORTONE_STORE_ID", environment);
 }
 
-export function portOneChannelKey(): string {
-  return requiredEnvironment("PORTONE_CHANNEL_KEY");
+export function portOneChannelKey(environment: CommerceEnvironmentReader = runtimeEnvironment): string {
+  return requiredEnvironment("PORTONE_CHANNEL_KEY", environment);
 }
 
 function portOneAPISecret(): string {
@@ -329,22 +332,36 @@ export function validatePortOnePayment(
   payment: PortOnePayment,
   expected: CommerceOrder,
   requiredStatus?: string,
+  environment: CommerceEnvironmentReader = runtimeEnvironment,
 ): PortOnePayment {
   const expectedChannelType = expected.payment_environment === "live" ? "LIVE" : "TEST";
   if (
     payment.id !== expected.payment_id
-    || payment.storeId !== portOneStoreID()
-    || payment.channel?.key !== portOneChannelKey()
+    || payment.storeId !== portOneStoreID(environment)
+    || payment.channel?.key !== portOneChannelKey(environment)
     || payment.channel?.type !== expectedChannelType
     || payment.version !== "V2"
     || payment.amount?.total !== expected.amount_krw
     || payment.currency !== expected.currency
-    || payment.method?.type !== "PaymentMethodEasyPay"
+    || verifiedPortOnePaymentMethod(payment) === undefined
     || (requiredStatus !== undefined && payment.status !== requiredStatus)
   ) {
     throw new HttpError(409, "payment_verification_failed", "결제 정보가 주문과 일치하지 않습니다.");
   }
   return payment;
+}
+
+export function verifiedPortOnePaymentMethod(
+  payment: PortOnePayment,
+): PortOnePaymentMethod | undefined {
+  switch (payment.method?.type) {
+    case "PaymentMethodCard":
+      return "CARD";
+    case "PaymentMethodEasyPay":
+      return "EASY_PAY";
+    default:
+      return undefined;
+  }
 }
 
 export async function applyPortOnePayment(
@@ -355,6 +372,10 @@ export async function applyPortOnePayment(
   payloadHash?: string,
 ): Promise<string> {
   validatePortOnePayment(payment, order);
+  const paymentMethod = verifiedPortOnePaymentMethod(payment);
+  if (paymentMethod === undefined) {
+    throw new HttpError(409, "payment_verification_failed");
+  }
   const cancelled = payment.amount.cancelled ?? 0;
   const balance = payment.amount.total - cancelled;
   if (!Number.isSafeInteger(balance) || balance < 0) {
@@ -375,7 +396,7 @@ export async function applyPortOnePayment(
     p_currency: payment.currency,
     p_provider_status: payment.status,
     p_transaction_id: payment.transactionId ?? null,
-    p_payment_method_type: "EASY_PAY",
+    p_payment_method_type: paymentMethod,
     p_verified_at: new Date().toISOString(),
   });
 }

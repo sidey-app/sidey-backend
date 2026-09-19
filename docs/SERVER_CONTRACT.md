@@ -26,7 +26,7 @@ commerce는 다음 현행 계약을 유지한다. 적용된 migration과 과거 
 - production은 `sales_enabled=false`와 PortOne 시크릿 미설정에서 실패 폐쇄한다. 판매 잠금은 이미 보유한 상품의 선택·장착을 막지 않는다.
 - 주문 가격은 서버의 활성 catalog 가격을 사용한다. `upsert_profile`과 꾸미기 장착 RPC는 현재 계정의 활성 entitlement를 검사한다.
 - PortOne·App Store·complimentary 지급은 출처별 원장에 기록하고, 클라이언트는 RLS가 적용된 유효 소유권 projection을 읽는다. 주문 없는 지급도 출처와 지급 근거를 보존하며 한 출처의 환불이 다른 활성 지급을 회수하지 않는다.
-- PortOne V2 결제 상태에는 payment ID, Store ID, Channel Key, V2, TEST/LIVE, 상태, KRW, 서버 주문 금액, `EASY_PAY` 일치를 요구한다. event ID와 payload hash를 함께 저장해 중복 웹훅과 상충 payload를 분리한다.
+- PortOne V2 결제 상태에는 payment ID, Store ID, Channel Key, V2, TEST/LIVE, 상태, KRW, 서버 주문 금액과 허용된 `CARD`/기존 `EASY_PAY` 결제수단 일치를 요구한다. event ID와 payload hash를 함께 저장해 중복 웹훅과 상충 payload를 분리한다.
 - 새 checkout은 현행 정책 버전과 제공 시작·환불 조건에 대한 동의를 기록하며 기존 주문에 저장된 결제 당시 동의 원문은 바꾸지 않는다.
 
 운영 checkout은 고정된 운영 API를 사용하는 공개 `checkout/`·`checkout-result/` 경로와
@@ -56,7 +56,7 @@ forward-only `20260905010000_settings_retention_contract.sql`은 미니 대포�
 Edge Functions는 책임을 다음처럼 분리한다.
 
 - `commerce-order`: 인증·Google 연결·상품·소유 여부를 확인하고 서버 가격의 PortOne `paymentId`와 256-bit checkout token hash를 생성한다.
-- `commerce-checkout`: token과 정책 동의를 확인한 뒤 `store_id`, `channel_key`, `payment_id`, 서버 가격, `CURRENCY_KRW`, `EASY_PAY`, redirect URL을 반환한다.
+- `commerce-checkout`: token과 정책 동의를 확인한 뒤 `store_id`, `channel_key`, `payment_id`, 서버 가격, `CURRENCY_KRW`, `CARD`, redirect URL을 반환한다.
 - `commerce-complete`: PortOne API에서 결제를 재조회하고 모든 결제 사실이 일치할 때만 entitlement를 지급한다.
 - `commerce-webhook`: `jsr:@portone/server-sdk@0.19.0`으로 raw body 서명을 검증한 뒤 PortOne API를 다시 조회한다.
 - `commerce-refund`: 별도 운영 키와 멱등키를 요구하고 PortOne 전액 취소·재조회가 확인된 뒤 purchase entitlement만 회수한다.
