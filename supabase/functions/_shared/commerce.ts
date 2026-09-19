@@ -2,6 +2,7 @@ import { SUPPORTED_PRODUCT_IDS } from "./commerce-products.ts";
 export { SUPPORTED_PRODUCT_IDS };
 export const PORTONE_API_BASE = "https://api.portone.io";
 const PRODUCTION_SUPABASE_HOST = "whtejsviizgejauasqqt.supabase.co";
+const PRODUCTION_WEBSITE_URL = "https://sidey-app.github.io/SIDEY/";
 
 export type CommerceEnvironmentReader = (name: string) => string | undefined;
 const runtimeEnvironment: CommerceEnvironmentReader = (name) => Deno.env.get(name);
@@ -80,8 +81,8 @@ function configurationURL(value: string, environmentName: string): URL {
 }
 
 function websitePageURL(path: string, environment: CommerceEnvironmentReader): URL {
-  const base = environmentValue("SIDEY_WEBSITE_URL", environment)
-    || "https://sidey-app.github.io/SIDEY/";
+  const configuredBase = environmentValue("SIDEY_WEBSITE_URL", environment);
+  const base = configuredBase || PRODUCTION_WEBSITE_URL;
   const baseURL = configurationURL(base.endsWith("/") ? base : `${base}/`, "SIDEY_WEBSITE_URL");
   const hostname = baseURL.hostname.toLowerCase();
   const loopback = baseURL.protocol === "http:"
@@ -94,6 +95,15 @@ function websitePageURL(path: string, environment: CommerceEnvironmentReader): U
     || baseURL.search !== ""
     || baseURL.hash !== ""
   ) {
+    throw new CommerceConfigurationError("SIDEY_WEBSITE_URL");
+  }
+  const backendURL = normalizedFunctionBaseURL(supabaseURL(environment), "SUPABASE_URL");
+  if (
+    backendURL.hostname.toLowerCase() !== PRODUCTION_SUPABASE_HOST
+    && (!configuredBase || baseURL.origin === new URL(PRODUCTION_WEBSITE_URL).origin)
+  ) {
+    // The public website always calls production and deliberately ignores api overrides.
+    // Nonproduction tokens require a separately configured development website.
     throw new CommerceConfigurationError("SIDEY_WEBSITE_URL");
   }
   return new URL(path, baseURL);

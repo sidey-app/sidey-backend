@@ -59,9 +59,40 @@ Deno.test("staging and loopback backends retain a normalized api query", () => {
     ["https://sidey-staging.supabase.co", "https://sidey-staging.supabase.co/functions/v1"],
     ["http://127.0.0.1:54321", "http://127.0.0.1:54321/functions/v1"],
   ]) {
-    const checkout = new URL(checkoutPageURL(checkoutToken, fakeEnvironment({ SUPABASE_URL: backend })));
+    const environment = fakeEnvironment({
+      SUPABASE_URL: backend,
+      SIDEY_WEBSITE_URL: "https://checkout-dev.example.com/SIDEY/",
+    });
+    const checkout = new URL(checkoutPageURL(checkoutToken, environment));
+    assertEquals(checkout.origin, "https://checkout-dev.example.com");
     assertEquals(checkout.searchParams.get("api"), expectedAPI);
     assertEquals(checkout.hash, `#token=${checkoutToken}`);
+    const redirect = new URL(checkoutRedirectURL(checkoutToken, productID, environment));
+    assertEquals(redirect.origin, "https://checkout-dev.example.com");
+    assertEquals(redirect.searchParams.get("api"), expectedAPI);
+    assertEquals(redirect.hash, `#token=${checkoutToken}`);
+  }
+});
+
+Deno.test("nonproduction checkout requires an explicit development website", () => {
+  for (const backend of ["https://sidey-staging.supabase.co", "http://127.0.0.1:54321"]) {
+    const environment = fakeEnvironment({ SUPABASE_URL: backend });
+    assertConfigurationError(() => checkoutPageURL(checkoutToken, environment), "SIDEY_WEBSITE_URL");
+    assertConfigurationError(() => checkoutRedirectURL(checkoutToken, productID, environment), "SIDEY_WEBSITE_URL");
+  }
+});
+
+Deno.test("nonproduction checkout cannot explicitly target the production website", () => {
+  for (const backend of ["https://sidey-staging.supabase.co", "http://127.0.0.1:54321"]) {
+    for (const website of [
+      "https://sidey-app.github.io/SIDEY/",
+      "https://SIDEY-APP.github.io/SIDEY",
+      "https://sidey-app.github.io/",
+    ]) {
+      const environment = fakeEnvironment({ SUPABASE_URL: backend, SIDEY_WEBSITE_URL: website });
+      assertConfigurationError(() => checkoutPageURL(checkoutToken, environment), "SIDEY_WEBSITE_URL");
+      assertConfigurationError(() => checkoutRedirectURL(checkoutToken, productID, environment), "SIDEY_WEBSITE_URL");
+    }
   }
 });
 
@@ -122,6 +153,7 @@ Deno.test("staging cannot publish a production checkout api", () => {
     () => checkoutPageURL(checkoutToken, fakeEnvironment({
       SUPABASE_URL: "https://sidey-staging.supabase.co",
       SIDEY_PUBLIC_SUPABASE_URL: productionURL,
+      SIDEY_WEBSITE_URL: "https://checkout-dev.example.com/SIDEY/",
     })),
     "SIDEY_PUBLIC_SUPABASE_URL",
   );
