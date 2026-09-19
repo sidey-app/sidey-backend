@@ -31,6 +31,7 @@ Deno.serve(async (request) => {
     }
 
     const checkoutToken = randomToken();
+    const checkoutURL = checkoutPageURL(checkoutToken);
     const tokenHash = await sha256Hex(checkoutToken);
     const rows = await userRPC<CreatedOrder[]>(
       "create_commerce_order",
@@ -42,7 +43,7 @@ Deno.serve(async (request) => {
 
     return jsonResponse({
       order_id: order.order_id,
-      checkout_url: checkoutPageURL(checkoutToken),
+      checkout_url: checkoutURL,
     }, 201);
   } catch (error) {
     return publicError(error);
