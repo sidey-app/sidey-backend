@@ -4,7 +4,7 @@ set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
 
-select plan(41);
+select plan(52);
 
 select has_table('public', 'commerce_products', 'commerce products exist');
 select has_table('public', 'commerce_prices', 'commerce prices exist');
@@ -147,6 +147,26 @@ select throws_ok(
     (select provider_order_id from commerce_test_order)),
   '22023', 'commerce_amount_mismatch', 'amount mismatch is rejected'
 );
+select throws_ok(
+  $$select public.commerce_record_portone_state(
+    'card-method','Transaction.Paid',repeat('b',64),'missing-card-payment',
+    'store-1','channel-1','V2','TEST',2200,2200,'KRW','PAID','tx-card','CARD',now())$$,
+  'P0001', 'commerce_order_not_found', 'card method passes the payment-method boundary'
+);
+select throws_ok(
+  format($sql$select public.commerce_record_portone_state(
+    'bad-method','Transaction.Paid',repeat('b',64),%L,
+    'store-1','channel-1','V2','TEST',2200,2200,'KRW','PAID','tx-transfer','TRANSFER',now())$sql$,
+    (select provider_order_id from commerce_test_order)),
+  '22023', 'portone_payment_environment_mismatch', 'unsupported payment method is rejected'
+);
+select throws_ok(
+  format($sql$select public.commerce_record_portone_state(
+    'missing-method','Transaction.Paid',repeat('b',64),%L,
+    'store-1','channel-1','V2','TEST',2200,2200,'KRW','PAID','tx-null',null,now())$sql$,
+    (select provider_order_id from commerce_test_order)),
+  '22023', 'portone_payment_environment_mismatch', 'missing payment method is rejected'
+);
 
 select is(
   public.commerce_record_portone_state(
@@ -200,6 +220,63 @@ select is(
     'store-1','channel-1','V2','TEST',2200,0,'KRW','CANCELLED','tx-1','EASY_PAY',now()
   ),
   'refunded', 'duplicate refund is idempotent'
+);
+
+create temporary table commerce_card_order as
+select * from public.create_commerce_order('character_starlight_upalupa', repeat('f', 64));
+select lives_ok(
+  $$select * from public.commerce_record_policy_consent(
+      repeat('f', 64),
+      (select policy_version from private.commerce_runtime_settings)
+    )$$,
+  'card order records canonical purchase policy consent'
+);
+select is(
+  public.commerce_record_portone_state(
+    'card-paid-1','Transaction.Paid',repeat('e',64),
+    (select provider_order_id from commerce_card_order),
+    'store-1','channel-1','V2','TEST',2200,2200,'KRW','PAID','tx-card-1','CARD',now()
+  ),
+  'approved', 'verified card state approves order'
+);
+select is(
+  (select payment_method_type from private.commerce_payments
+   where order_id = (select order_id from commerce_card_order)),
+  'CARD', 'card method is preserved in the payment ledger'
+);
+select is(
+  (select status from public.commerce_entitlements
+   where user_id = '20000000-0000-0000-0000-000000000001'
+     and entitlement_key = 'character:pixel_starlight_upalupa'),
+  'active', 'card payment grants entitlement'
+);
+select is(
+  public.commerce_record_portone_state(
+    'card-paid-1','Transaction.Paid',repeat('e',64),
+    (select provider_order_id from commerce_card_order),
+    'store-1','channel-1','V2','TEST',2200,2200,'KRW','PAID','tx-card-1','CARD',now()
+  ),
+  'approved', 'duplicate card event is idempotent'
+);
+select is(
+  (select count(*)::integer from public.commerce_refund_target(
+    (select order_id from commerce_card_order), 'not_provided',
+    '40000000-0000-0000-0000-000000000002', 'pgtap-card-operator', null)),
+  1, 'approved card order is refundable'
+);
+select is(
+  public.commerce_record_portone_state(
+    'card-refund-1','Transaction.Cancelled',repeat('f',64),
+    (select provider_order_id from commerce_card_order),
+    'store-1','channel-1','V2','TEST',2200,0,'KRW','CANCELLED','tx-card-1','CARD',now()
+  ),
+  'refunded', 'verified card cancellation refunds order'
+);
+select is(
+  (select status from public.commerce_entitlements
+   where user_id = '20000000-0000-0000-0000-000000000001'
+     and entitlement_key = 'character:pixel_starlight_upalupa'),
+  'refunded', 'card refund revokes purchase entitlement'
 );
 
 select set_config('request.jwt.claim.sub', '20000000-0000-0000-0000-000000000002', true);
