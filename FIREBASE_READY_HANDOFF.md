@@ -1,27 +1,33 @@
 # Firebase Gate 1 handoff
 
-상태: **NOT FIREBASE_READY — local candidate 검증 완료, remote 배포 미수행**
+상태: **FIREBASE_READY — Gate 1 PASS**
 기준일: 2026-09-21
 base commit: `d459dc4c50faa26caa5a56d78f18334b3752bc72`
 branch: `shared/firebase-v2-production-rollout`
-local implementation commit SHA: `2a98dcf8b8431d28cc2b870675f1d2312893dc67`
+Firebase runtime 배포 source commit: `223b8c4`
+최종 smoke source commit: `8633621`
 
 ## 판정
 
-Gate 1의 local implementation과 emulator 검증까지 완료했다. Firebase production deploy, 10명 staging smoke, 배포 후 Rules/Functions 재조회는 수행하지 않았다. 따라서 이 문서는 client handoff 승인서가 아니고 macOS/Windows live integration 시작 근거로 사용하면 안 된다.
+Firebase production Functions/Rules 배포, Supabase staging 전용 지원 migration, 10명 end-to-end smoke와 cleanup 후 외부 read-back을 완료했다. Gate 2 macOS client implementation/validation을 시작할 수 있다.
 
-## local candidate contract
+이 판정은 Firebase production과 Supabase **staging** 조합에 한정한다. Supabase production migration, client 변경, public release, store upload는 수행하지 않았다.
+
+## deployed contract
 
 - machine-readable fixture: `firebase/contract-v2.fixture.json`
 - fixture SHA-256: `4785705721e971ae463a5692bc80cadc7ff49ed0e20aab495dc1b0d6be0619d0`
-- Rules SHA-256: `46992380013bf1526532527e8680d09d412d5a2ae97017245bfbc50bb4e392e0`
-- staging support migration SHA-256: `0f9b2a925cfe9c05c4b53dfbbabf09178f95eac639f27c9ab637b3efe7f04372`
+- local Rules raw SHA-256: `46992380013bf1526532527e8680d09d412d5a2ae97017245bfbc50bb4e392e0`
+- local/remote Rules canonical SHA-256: `2bc71cbc8a6823816ce84d701be7ebc791319d291f7c13abd5544f047ed0d622` — exact match
 - Firebase project: `sidey-realtime`
-- RTDB instance/target: `sidey`
+- active RTDB instance/target: `sidey`
 - database URL: `https://sidey.asia-southeast1.firebasedatabase.app`
-- Functions codebase/region: `sidey-v2` / `asia-southeast1`
-- App Check enforcement: OFF
+- disabled default RTDB: `sidey-realtime-default-rtdb`
+- Functions codebase/region/runtime: `sidey-v2` / `asia-southeast1` / Node.js 22
+- App Check: RTDB/Auth `UNENFORCED`; replay protection omitted, therefore default `OFF`
 - Presence: Supabase private Realtime only
+
+Firebase-generated `FIREBASE_CONFIG`에는 disabled default RTDB URL이 들어 있지만, application code는 `sidey` regional URL을 명시적으로 초기화한다. Smoke와 Admin read-back도 `sidey`만 사용했다.
 
 ### canonical paths
 
@@ -37,57 +43,68 @@ Gate 1의 local implementation과 emulator 검증까지 완료했다. Firebase p
 | `/v2/l/{roomId}/e` | server write, member read | latest compact chat `{i,s,b,t,n,k?}` |
 | `/v2/n/{uid}` | server write, owner read | access/room/chat hints |
 
-Legacy `/v2/rooms`, `/v2/chat`, `/v2/access`, `/v2/internal`과 `/v2/r`은 client read/write가 모두 거부된다. `persistChatCommand`는 local export에서 제거돼 다음 Functions deploy 시 삭제 대상이다.
+Legacy `/v2/rooms`, `/v2/chat`, `/v2/access`, `/v2/internal`과 `/v2/r`은 client read/write가 모두 거부된다. `persistChatCommand`는 production에서 삭제됐고 재조회한 function 목록에도 없다.
 
-## local function target
+## production Functions read-back
 
-다음 9개 export만 존재한다.
+모든 function은 `ACTIVE`, `asia-southeast1`, Node.js 22, 256 MiB, `minInstances=0`이다.
 
-- `bootstrapRealtime`
-- `reconcileRealtimeAccess`
-- `retryRealtimeAccess`
-- `retryRealtimeChat`
-- `retryRealtimeRoomRevisions`
-- `sendRealtimeChat`
-- `syncRealtimeAccess`
-- `syncRealtimeChat`
-- `syncRealtimeRoomRevisions`
+| function | source generation | source hash | limit |
+| --- | ---: | --- | --- |
+| `bootstrapRealtime` | `1789975208595191` | `b9cb5669...` | max 10 / concurrency 20 |
+| `reconcileRealtimeAccess` | `1789975260453676` | `b9cb5669...` | max 1 / concurrency 1 |
+| `retryRealtimeAccess` | `1789975260488371` | `b9cb5669...` | max 1 / concurrency 1 |
+| `retryRealtimeChat` | `1789975260906257` | `b9cb5669...` | max 1 / concurrency 1 |
+| `retryRealtimeRoomRevisions` | `1789975260660227` | `b9cb5669...` | max 1 / concurrency 1 |
+| `sendRealtimeChat` | `1789975260644163` | `b9cb5669...` | max 10 / concurrency 20 |
+| `syncRealtimeAccess` | `1789975261304544` | `3f3ba81b...` | max 1 / concurrency 1 |
+| `syncRealtimeChat` | `1789975260652664` | `3f3ba81b...` | max 1 / concurrency 1 |
+| `syncRealtimeRoomRevisions` | `1789975260666845` | `3f3ba81b...` | max 1 / concurrency 1 |
 
-배포 config는 target 없는 default RTDB deploy를 허용하지 않는다.
+두 source hash는 secret binding이 다른 endpoint 묶음에서 Firebase가 생성한 정상 결과다. 최종 wake read-back은 access/room/chat 모두 HTTP 200, claimed/delivered/failed `0`이었다.
 
-```text
-database:sidey
-functions:sidey-v2
-```
+## Supabase staging
+
+대상 ref는 `fjglrvhvdthntkvrduyi`다. production Supabase는 수정하지 않았다.
+
+적용한 forward-only migration:
+
+| migration | SHA-256 | purpose |
+| --- | --- | --- |
+| `20260921070000_firebase_delivery_status.sql` | `0f9b2a925cfe9c05c4b53dfbbabf09178f95eac639f27c9ab637b3efe7f04372` | exact delivery status + deleted-source finalizer |
+| `20260921070944_firebase_access_delivery_snapshot.sql` | `21efb70e01e60de88c20758b51f8f2ca83172875dd2209718efd549eff57bb28` | stale worker가 finalized access tombstone을 재생성하지 못하게 함 |
+
+두 RPC는 `SECURITY DEFINER`, 빈 `search_path`, `service_role` 전용이며 `anon`/`authenticated` 실행 권한이 없다. 최종 security advisor는 ERROR 0이었다. 출력된 WARN은 기존에 의도적으로 authenticated에 공개된 SECURITY DEFINER RPC들뿐이고 새 Gate 1 RPC는 포함되지 않았다.
 
 ## 변경 요약
 
 - RTDB Presence와 legacy RTDB chat command Rules/trigger 제거
-- server mirror를 `/v2/a` 아래로 이동
-- typing을 임의 connection ID에서 Firebase claim과 동일한 Supabase session UUID slot으로 변경
-- active session source를 최대 128개까지 검증한 뒤 expiry/UUID 순으로 16개를 결정적으로 mirror해 17번째 session이 사용자 전체를 quarantine하지 않게 함
-- session revoke typing slot을 durable cleanup marker로 exact 삭제
-- room deletion tombstone 첫 delivery를 ACK하지 않고 90초 claim 뒤 두 번째 cleanup에서만 ACK해 60초 chat worker의 ambiguous publish를 최종 제거
-- kick/leave/refund/session revoke/account suspend/global health expiry를 기존 token에서도 fail-closed 처리
-- bootstrap limiter를 server-only `/v2/a/b`로 이동하고 account inactive cleanup 추가
-- Functions package의 test/log/env/cache/node_modules 제외
-- immediate chat 지연 로그에서 room/message identifier 제거
-- `sidey` RTDB target과 `sidey-v2` Functions codebase 명시
-- Windows canonical REST `.json?auth=`, SSE `put`/`patch`, safe 307 fixture 추가
-- staging smoke를 exact staging Supabase ref + 명시적 10-user opt-in + Firebase Admin ADC로 제한하고, 생성 요청 전 journal·known UID Admin cleanup·Supabase/Firebase Auth/room/RTDB read-back을 구현
-- service-role 전용 `firebase_delivery_status`/`firebase_finalize_deleted_delivery` forward migration을 추가해 test-owned access/room/chat outbox의 exact ACK를 확인하고, 삭제된 source만 transaction 안에서 queue tombstone까지 제거한 뒤 RTDB durable fence를 정리하도록 함
+- server mirror를 `/v2/a` 아래로 이동하고 session/membership/entitlement revocation을 fail-closed 처리
+- typing을 Firebase claim과 같은 Supabase session UUID slot으로 고정
+- active session source를 최대 128개 검증한 뒤 16개만 결정적으로 mirror
+- room deletion을 90초 claim 뒤 두 번째 cleanup에서 ACK해 60초 chat worker의 ambiguous publish 제거
+- compact chat/throw와 per-user inbox를 server-authoritative 경로로 제한
+- bootstrap limiter를 server-only `/v2/a/b`로 이동
+- account revoke 시 RTDB 부모/자식 multi-location delete 충돌을 coalesce
+- finalizer와 stale delivery snapshot lock으로 cleanup 뒤 outbox 재생성 race 제거
+- smoke PASS를 cleanup 완료 뒤에만 출력하고, worker wake timeout·재시도·3회 연속 zero-residual 확인 추가
+- service role에도 금지된 table 직접 조회를 제거하고 database source 부재는 transaction finalizer가 검증
 
 ## test evidence
 
 | 검증 | 결과 |
 | --- | --- |
-| Functions syntax/unit/embedded SQL/contract | PASS `57/57` |
+| Functions syntax/unit/embedded SQL/contract | PASS `66/66` |
 | RTDB Rules emulator (`demo-sidey`) | PASS `11/11` |
 | Edge protocol/load harness | PASS `402/402` |
-| JSON config parse / `git diff --check` | PASS |
-| full local migration reset + pgTAP | PASS `651/651` (22 files), Gate 1 service-role delivery-status migration 포함 |
-| Gate 0 DB concurrency suites | PASS; Gate 1 delivery-status forward migration은 full migration reset + pgTAP에 포함 |
-| 10명 staging smoke | NOT RUN — remote deploy와 mutation 승인 필요 |
+| full local migration reset + pgTAP | PASS `654/654` (`22` files) |
+| DB concurrency suites | PASS 전체 |
+| Rules security audit | PASS `5/5` |
+| staging security advisor | PASS, ERROR `0`; 기존 의도된 WARN만 존재 |
+| 10명 staging smoke | PASS: callable chat sequence `1`, compact throw, exact 10-user auth/access/room cleanup |
+| post-smoke worker wake | PASS: 3 endpoints HTTP `200`, pending/failed `0` |
+| post-smoke DB read-back | PASS: access pending `0`, room pending `0` |
+| post-smoke Rules read-back | PASS: canonical SHA-256 exact match |
 | 3,000 connections, 600 seconds | NOT RUN; 기존 2,400 시험은 FAIL |
 
 Rules emulator가 확인한 보안 fixture:
@@ -102,57 +119,60 @@ Rules emulator가 확인한 보안 fixture:
 - stale membership이 남아도 room tombstone 뒤 read/write 거부
 - 모든 legacy namespace와 server-owned event/access node client 거부
 
+## smoke cleanup evidence
+
+최종 성공 run은 임시 Supabase 사용자 10명, Firebase Auth 사용자 10명, 방 1개를 만들었다. 종료 전에 다음을 모두 확인했다.
+
+- Supabase/Firebase Auth test UID 부재
+- room source 및 RTDB live room 부재
+- access 10건과 room 1건의 exact revision ACK
+- chat publish/cleanup pending 0
+- finalizer가 source 부재를 row lock 안에서 재확인한 뒤 exact queue tombstone 삭제
+- exact `/v2/a/u`, `/v2/a/b`, `/v2/n`, `/v2/a/d`, `/v2/l` test paths 부재
+- 10초 간격 zero-residual read-back 3회 연속 통과
+- 별도 최종 wake 뒤 access/room/chat worker 모두 할 일 0
+
+현재 `/v2` shallow root는 `a`, `access`, `internal`, `n`이다. `access`/`internal`은 기존 legacy data root이지만 production Rules가 client read/write를 거부한다.
+
+비차단 staging hygiene debt: 이번 Gate 이전부터 존재한 source-absent·fully-settled access tombstone `72`건이 있다. 이번 smoke UID와 무관하고 pending은 `0`이며 deny-all 상태다. 과거 staging 데이터까지 무단 삭제하지 않았고 별도 정리 작업으로 남긴다.
+
 ## Rules audit
 
 ```json
 {
   "score": 5,
-  "summary": "Local candidate Rules는 server-only authority, per-request session/membership checks, exact owner slots, payload allowlists, revocation health와 room tombstone fence를 모두 적용하며 emulator에서 권한 회수와 abuse fixture를 통과했다.",
+  "summary": "Production Rules는 server-only authority, per-request session/membership checks, exact owner slots, payload allowlists, revocation health와 room tombstone fence를 적용하며 emulator와 production canonical hash read-back을 통과했다.",
   "findings": []
 }
 ```
 
-이 score는 local candidate Rules에 대한 평가다. production에 같은 hash가 배포됐다는 뜻이 아니다. Admin SDK가 Rules를 우회하므로 Functions의 two-pass tombstone cleanup, Supabase claim invalidation, 90초 claim 대 60초 worker timeout 불변식도 함께 유지해야 한다. RTDB Rules 자체에는 child-count 연산이 없으므로 typing slot bound는 server-only 16-session mirror, exact claim 비교, durable revoke cleanup과 access-health fail-closed의 결합으로 보장한다.
-
-## compatibility evidence
-
-current private client repository `main` commit `135a354f57908cc6efc54dec53094d1f6b24151d`의 macOS/Windows source는 Firebase SDK, RTDB URL 또는 `/v2` 경로를 사용하지 않는다. 양 플랫폼은 현재 Supabase RPC/Broadcast/Presence만 사용한다. 따라서 Rules에서 legacy Firebase client 경로를 닫는 것이 현재 공개 client 동작을 깨뜨린다는 source evidence는 없다.
-
-Supabase staging의 `/v2/rooms/{room}/epochs/{epoch}`, `/v2/access/{room}`, `/v2/leases` Edge 실험 모델은 이 contract에 포함하지 않는다. 기능 flag가 꺼진 상태를 유지하고 Gate 2에서 compatibility/migration 대상으로 검토한다.
-
-## deploy 전 필수 조건
-
-1. 변경을 검토해 유효한 shared commit으로 고정한다.
-2. `/private/tmp/sidey-firebase-deployed-recovery/archives/`의 rollback archive를 휘발성 경로 밖의 접근 제한 artifact로 보존하고 SHA-256 `2247f646061a5322652433caef152dcb62037430efd376e2215133613df06178`을 재확인한다.
-3. 배포 diff에서 `persistChatCommand` 삭제, 9개 유지 export, `database:sidey`, `functions:sidey-v2`만 표시되는지 확인한다.
-4. Functions를 먼저 배포하고 bootstrap/access/chat worker가 `/v2/a,l,n`을 사용하는지 재조회한다.
-5. Rules `469923...`을 `database:sidey`에 배포한다. `sidey-realtime-default-rtdb`는 조회·수정하지 않는다.
-6. 배포 직후 Rules hash, 9개 Functions revision/config, 삭제된 legacy trigger와 App Check OFF를 read-back한다.
-7. production Supabase는 건드리지 않고, 별도 staging DB mutation 승인 후 `20260921070000_firebase_delivery_status.sql`만 staging에 적용해 service-role exact outbox read-back/finalizer를 준비한다.
-8. Firebase Admin ADC가 `sidey-realtime` Auth/RTDB의 exact test-owned UID/path만 정리할 수 있는지 확인한다.
-9. exact staging config와 `SIDEY_FIREBASE_GATE1_SMOKE_APPROVED=10`을 사용해 10명 smoke를 한 번 실행한다. temporary Supabase/Firebase Auth와 room이 없고, exact access/room/chat outbox ACK 완료 후 queue tombstone과 RTDB `/v2/a|l|n` 잔여가 0인지 재조회한다.
+Admin SDK는 Rules를 우회하므로 Functions의 two-pass tombstone cleanup, Supabase claim invalidation, 90초 claim 대 60초 worker timeout 불변식도 함께 유지해야 한다. typing slot bound는 server-only 16-session mirror, exact claim 비교, durable revoke cleanup과 access-health fail-closed 결합으로 보장한다.
 
 ## rollback
 
-현재 rollback은 **자료 확보됨, 실행 미검증** 상태다.
+rollback 자료는 durable user-only 경로에 보존했지만 실행 자체는 검증하지 않았다.
 
+- Firebase baseline: `/Users/aryu/Library/Application Support/SIDEY/rollout-artifacts/firebase-v2/2026-09-21-pre-gate1`
+- Supabase staging baseline: `/Users/aryu/Library/Application Support/SIDEY/rollout-artifacts/supabase-staging/2026-09-21-pre-gate1`
+- directory permission: `0700`
 - 이전 Functions archive SHA-256: `2247f646061a5322652433caef152dcb62037430efd376e2215133613df06178`
 - 이전 Rules canonical SHA-256: `ed94e215cf305a0bbbfd6b9801b2c04ec7c20d6a8e529aa9bada2c3edccbe4e8`
-- 현재 local 위치: `/private/tmp/sidey-firebase-deployed-recovery/`
+- Supabase recovery artifact: `65`개 checksum 확인 완료
 
-rollback 시 exact 이전 Functions source를 `functions:sidey-v2`에 복원한 뒤 이전 Rules를 `database:sidey`에 복원하고 두 hash/revision을 재조회한다. 이 경로는 아직 휘발성이므로 durable artifact 보존 전 production deploy를 시작하면 안 된다. Supabase production mutation은 없으므로 DB rollback은 이 Gate에 없다.
+Firebase rollback은 exact 이전 Functions source를 `functions:sidey-v2`에 복원한 뒤 이전 Rules를 `database:sidey`에 복원하고 hash/generation을 다시 조회한다. Firebase deploy ZIP은 재패키징 시 byte-identical하지 않을 수 있으므로 runtime-equivalent source 기준이다. Supabase production mutation은 없어서 production DB rollback은 없다.
 
 ## gate report
 
 | 항목 | 결과 |
 | --- | --- |
-| 대상 환경 | local emulator; production target config only |
-| 변경 파일·migration | Firebase Functions/Rules/config/tests/docs + staging smoke 지원용 forward migration 1; remote/production 적용 0 |
-| remote mutation | 없음 |
-| test | Functions 57 PASS, Rules 11 PASS, pgTAP 651 PASS, Edge harness 402 PASS |
-| compatibility | current macOS/Windows Firebase usage 0; live smoke 미실행 |
-| security | local Rules audit 5/5; revocation/A-B/tombstone PASS |
-| cost | 측정 안 됨; `minInstances=0`, 사용자별 schedule 추가 없음 |
-| cleanup | local Firebase emulator와 isolated Supabase stack 종료; remote temporary data 생성 안 함 |
-| rollback | exact baseline hashes/source 확보, durable 보존·실행 검증 전 |
-| 다음 gate | commit/rollback artifact 고정 후 staging support migration + Firebase deploy + 10명 smoke의 각각 별도 승인 |
+| 대상 환경 | Firebase production + Supabase staging |
+| remote mutation | Firebase Functions/Rules production, Supabase staging migration 2개 |
+| production Supabase | 미변경 |
+| function inventory | `9 ACTIVE`, legacy trigger `0` |
+| test | Functions 66, Rules 11, pgTAP 654, Edge 402, concurrency PASS |
+| smoke | exact 10-user PASS + cleanup + 3회 연속 zero-residual |
+| security | Rules 5/5, remote hash match, advisor ERROR 0, App Check UNENFORCED |
+| cost | `minInstances=0`, worker max 1, 사용자별 scheduler 없음; 3,000 동접 부하는 미검증 |
+| cleanup | 이번 smoke exact residual 0; 기존 staging tombstone 72건 별도 debt |
+| rollback | durable artifact 보존, 실행 미검증 |
+| 다음 gate | Gate 2 macOS client implementation/validation. production Supabase와 release는 별도 승인 필요 |
