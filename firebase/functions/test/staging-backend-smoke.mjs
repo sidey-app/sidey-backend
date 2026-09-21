@@ -169,10 +169,6 @@ async function finalizeDeletedDelivery(ids) {
 async function cleanupBackendState(requireSettled = true) {
   const ids = users.map((user) => user.id).filter(Boolean);
   if (ids.length !== users.length) return false;
-  const roomRows = roomId ? await json(
-    `${config.url}/rest/v1/rooms?id=eq.${encodeURIComponent(roomId)}&select=id`,
-    {headers: supabaseHeaders(config.serviceRoleKey, config.serviceRoleKey)},
-  ) : [];
   const firebaseUsers = await adminAuth.getUsers(ids.map((uid) => ({uid})));
   const access = await Promise.all(ids.map((uid) =>
     adminDatabase.ref(`/v2/a/u/${uid}`).get()));
@@ -187,8 +183,10 @@ async function cleanupBackendState(requireSettled = true) {
       Object.keys(value.cleanup_sessions || {}).length === 0;
   });
   const deliveryReady = roomId ? (await deliveryStatus(ids, requireSettled)).ready : true;
+  // Direct table reads are intentionally unavailable even to service_role.
+  // The finalizer below locks and verifies every database source row before
+  // deleting delivery tombstones, so this polling path does not duplicate it.
   const state = {
-    roomAbsent: Array.isArray(roomRows) && roomRows.length === 0,
     firebaseAuthAbsent: firebaseUsers.users.length === 0,
     supabaseAuthAbsent: (await Promise.all(ids.map(supabaseUserAbsent))).every(Boolean),
     accessDenyAll,
