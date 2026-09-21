@@ -121,22 +121,23 @@ async function wakeWorkers() {
   if (typeof wakeToken !== "string" || wakeToken.length < 32) {
     return false;
   }
-  let successful = true;
-  for (const endpoint of [
+  const results = await Promise.all([
     "syncRealtimeAccess",
     "syncRealtimeRoomRevisions",
     "syncRealtimeChat",
-  ]) {
+  ].map(async (endpoint) => {
     try {
       await json(`https://asia-southeast1-sidey-realtime.cloudfunctions.net/${endpoint}`, {
         method: "POST",
         headers: {"x-sidey-wake-token": wakeToken},
+        signal: AbortSignal.timeout(15_000),
       });
+      return true;
     } catch {
-      successful = false;
+      return false;
     }
-  }
-  return successful;
+  }));
+  return results.every(Boolean);
 }
 
 async function supabaseUserAbsent(userId) {
@@ -256,7 +257,6 @@ async function cleanup() {
   const deadline = Date.now() + 240_000;
   let converged = false;
   while (Date.now() < deadline) {
-    await wakeWorkers();
     try {
       if (await cleanupBackendConverged() &&
           (!roomId || Date.now() - (roomDeletedAt || cleanupStartedAt) >= 95_000)) {
@@ -264,6 +264,7 @@ async function cleanup() {
         break;
       }
     } catch {}
+    await wakeWorkers();
     await new Promise((resolve) => setTimeout(resolve, 10_000));
   }
   if (!converged) failures.add("cleanup_not_converged");
