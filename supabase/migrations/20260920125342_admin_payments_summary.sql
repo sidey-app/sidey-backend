@@ -63,16 +63,6 @@ insert into private.admin_payment_catalog_snapshot (
   ('character_quokka', '쿼카', 'character', 1100, 'KRW', '96f62abc0b350791de8e0d7c3b3af33f4e73dae6', '2026-09-16T02:20:05+09:00'),
   ('throwable_leaf', '잎사귀', 'throwable', 1100, 'KRW', '96f62abc0b350791de8e0d7c3b3af33f4e73dae6', '2026-09-16T02:20:05+09:00');
 
--- The environment/purchase index already serves the App Store summary range.
--- Add only the user-history lookup and the approved web-purchase range index.
-create index app_store_transactions_user_production_history_idx
-on private.app_store_transactions (user_id, purchased_at desc)
-where environment = 'Production' and user_id is not null;
-
-create index commerce_orders_admin_purchase_idx
-on public.commerce_orders (approved_at desc, product_id, user_id)
-where approved_at is not null and status in ('approved', 'refunded');
-
 create or replace function public.admin_payments_summary(
   p_from timestamptz default null,
   p_to timestamptz default null,

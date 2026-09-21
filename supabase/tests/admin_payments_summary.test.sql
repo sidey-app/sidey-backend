@@ -17,6 +17,74 @@ select is(
   '96f62abc0b350791de8e0d7c3b3af33f4e73dae6',
   'catalog provenance pins the reviewed public commit'
 );
+select has_index(
+  'private',
+  'app_store_transactions',
+  'app_store_transactions_user_production_history_idx',
+  'App Store user purchase history has its reporting index'
+);
+select has_index(
+  'public',
+  'commerce_orders',
+  'commerce_orders_admin_purchase_idx',
+  'PortOne purchase reporting has its range index'
+);
+select ok(
+  (select indexes.indisvalid and indexes.indisready
+   from pg_catalog.pg_index indexes
+   join pg_catalog.pg_class relations on relations.oid = indexes.indexrelid
+   join pg_catalog.pg_namespace namespaces on namespaces.oid = relations.relnamespace
+   where namespaces.nspname = 'private'
+     and relations.relname = 'app_store_transactions_user_production_history_idx'),
+  'App Store reporting index is valid and ready'
+);
+select ok(
+  (select indexes.indisvalid and indexes.indisready
+   from pg_catalog.pg_index indexes
+   join pg_catalog.pg_class relations on relations.oid = indexes.indexrelid
+   join pg_catalog.pg_namespace namespaces on namespaces.oid = relations.relnamespace
+   where namespaces.nspname = 'public'
+     and relations.relname = 'commerce_orders_admin_purchase_idx'),
+  'PortOne reporting index is valid and ready'
+);
+select is(
+  (select array_agg(attributes.attname order by keys.ordinality)::text[]
+   from pg_catalog.pg_index indexes
+   join pg_catalog.pg_class relations on relations.oid = indexes.indexrelid
+   cross join lateral unnest(indexes.indkey) with ordinality as keys(attnum, ordinality)
+   join pg_catalog.pg_attribute attributes
+     on attributes.attrelid = indexes.indrelid and attributes.attnum = keys.attnum
+   where relations.relname = 'app_store_transactions_user_production_history_idx'),
+  array['user_id', 'purchased_at']::text[],
+  'App Store reporting index preserves the reviewed column order'
+);
+select ok(
+  (select pg_catalog.pg_get_expr(indexes.indpred, indexes.indrelid)
+          like '%environment%Production%user_id IS NOT NULL%'
+   from pg_catalog.pg_index indexes
+   join pg_catalog.pg_class relations on relations.oid = indexes.indexrelid
+   where relations.relname = 'app_store_transactions_user_production_history_idx'),
+  'App Store reporting index preserves the Production user-history predicate'
+);
+select is(
+  (select array_agg(attributes.attname order by keys.ordinality)::text[]
+   from pg_catalog.pg_index indexes
+   join pg_catalog.pg_class relations on relations.oid = indexes.indexrelid
+   cross join lateral unnest(indexes.indkey) with ordinality as keys(attnum, ordinality)
+   join pg_catalog.pg_attribute attributes
+     on attributes.attrelid = indexes.indrelid and attributes.attnum = keys.attnum
+   where relations.relname = 'commerce_orders_admin_purchase_idx'),
+  array['approved_at', 'product_id', 'user_id']::text[],
+  'PortOne reporting index preserves the reviewed column order'
+);
+select ok(
+  (select pg_catalog.pg_get_expr(indexes.indpred, indexes.indrelid)
+          like '%approved_at IS NOT NULL%status%approved%refunded%'
+   from pg_catalog.pg_index indexes
+   join pg_catalog.pg_class relations on relations.oid = indexes.indexrelid
+   where relations.relname = 'commerce_orders_admin_purchase_idx'),
+  'PortOne reporting index preserves the approved and refunded predicate'
+);
 select ok(
   not has_table_privilege('anon', 'private.admin_payment_catalog_snapshot', 'select'),
   'anon cannot read the private catalog snapshot'
