@@ -1,0 +1,25 @@
+{
+  "database": [
+    {
+      "target": "sidey",
+      "rules": "database.rules.json"
+    }
+  ],
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "sidey-v2",
+      "ignore": [
+        ".git",
+        ".env",
+        ".env.*",
+        "node_modules",
+        "coverage",
+        "test",
+        "**/*.log",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ]
+    }
+  ]
+}

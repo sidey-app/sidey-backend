@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "sidey-realtime"
+  },
+  "targets": {
+    "sidey-realtime": {
+      "database": {
+        "sidey": [
+          "sidey"
+        ]
+      }
+    }
+  }
+}

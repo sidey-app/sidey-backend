@@ -1,0 +1,24 @@
+{
+  "name": "sidey-firebase-functions",
+  "private": true,
+  "version": "0.1.0",
+  "description": "SIDEY Firebase v2 compact realtime functions",
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "check": "node --check index.js && node --check lib/supabase.js && node --check lib/access-sync.js && node --check lib/room-revision.js && node --check lib/realtime-chat.js && node --check test/staging-backend-smoke.mjs",
+    "test": "npm run check && node --test test/contract.test.js test/rest-sse-contract.test.mjs test/export.test.js test/supabase.test.js test/access-sync.test.js test/access-sql.test.js test/delivery-status-sql.test.js test/room-revision.test.js test/realtime-chat.test.js",
+    "test:rules": "node --test test/database-rules.test.js"
+  },
+  "dependencies": {
+    "firebase-admin": "14.4.0",
+    "firebase-functions": "7.4.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.3.16",
+    "@firebase/rules-unit-testing": "5.0.2",
+    "firebase": "12.19.0"
+  }
+}

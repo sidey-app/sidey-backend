@@ -405,6 +405,23 @@ verify_jwt = false
 [functions.commerce-refund]
 verify_jwt = false
 
+[functions.realtime-bootstrap]
+verify_jwt = true
+
+# Scheduler/wake authentication is enforced inside the service-owned handler.
+[functions.realtime-publish]
+verify_jwt = false
+
+[functions.realtime-publish-live]
+verify_jwt = false
+
+# The handler verifies the caller through its PostgREST authorization RPC.
+[functions.realtime-event]
+verify_jwt = false
+
+[functions.realtime-wake]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

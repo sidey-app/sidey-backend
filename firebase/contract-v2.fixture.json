@@ -1,0 +1,63 @@
+{
+  "protocolVersion": 2,
+  "status": "local-candidate-not-deployed",
+  "projectId": "sidey-realtime",
+  "databaseInstance": "sidey",
+  "databaseURL": "https://sidey.asia-southeast1.firebasedatabase.app",
+  "region": "asia-southeast1",
+  "functionsCodebase": "sidey-v2",
+  "bootstrap": {
+    "kind": "https",
+    "function": "bootstrapRealtime",
+    "authorization": "Supabase Bearer token"
+  },
+  "chat": {
+    "kind": "callable",
+    "function": "sendRealtimeChat",
+    "requestKeys": ["b", "i", "r"],
+    "responseKeys": ["b", "i", "k?", "n", "t"],
+    "errorMap": {
+      "authentication_required": "unauthenticated",
+      "membership_required": "permission-denied",
+      "message_rate_limited": "resource-exhausted",
+      "message_id_conflict": "failed-precondition",
+      "message_sequence_exhausted": "failed-precondition",
+      "invalid_argument": "invalid-argument",
+      "invalid_message_body": "invalid-argument",
+      "message_id_required": "invalid-argument",
+      "fallback": "unavailable"
+    }
+  },
+  "paths": {
+    "accessRoot": "/v2/a",
+    "accessHealth": "/v2/a/s/v",
+    "accessUser": "/v2/a/u/{uid}",
+    "roomTombstone": "/v2/a/d/{roomId}",
+    "bootstrapLimit": "/v2/a/b/{uid}",
+    "liveRoom": "/v2/l/{roomId}",
+    "typing": "/v2/l/{roomId}/t/{uid}/{sideySessionId}",
+    "pulse": "/v2/l/{roomId}/c/{uid}",
+    "throw": "/v2/l/{roomId}/x/{uid}",
+    "chatEvent": "/v2/l/{roomId}/e",
+    "inbox": "/v2/n/{uid}",
+    "accessRevision": "/v2/n/{uid}/a",
+    "roomRevision": "/v2/n/{uid}/r/{roomId}/v",
+    "chatSequence": "/v2/n/{uid}/r/{roomId}/n"
+  },
+  "limits": {
+    "roomsPerUser": 5,
+    "membersPerRoom": 12,
+    "activeSessionsMirroredPerUser": 16,
+    "sourceSessionsValidatedPerUser": 128,
+    "chatGraphemes": 200,
+    "typingMinimumIntervalMs": 1500,
+    "pulseMinimumIntervalMs": 1000,
+    "throwMinimumIntervalMs": 500
+  },
+  "activeSessionSelection": {
+    "order": "expiry-desc-then-uuid-asc",
+    "excludedSessionBehavior": "fail-closed"
+  },
+  "presence": "supabase-private-realtime-only",
+  "appCheckEnforcement": false
+}
