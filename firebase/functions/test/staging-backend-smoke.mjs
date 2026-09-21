@@ -166,7 +166,7 @@ async function finalizeDeletedDelivery(ids) {
   });
 }
 
-async function cleanupBackendConverged(requireSettled = true) {
+async function cleanupBackendState(requireSettled = true) {
   const ids = users.map((user) => user.id).filter(Boolean);
   if (ids.length !== users.length) return false;
   const roomRows = roomId ? await json(
@@ -187,10 +187,19 @@ async function cleanupBackendConverged(requireSettled = true) {
       Object.keys(value.cleanup_sessions || {}).length === 0;
   });
   const deliveryReady = roomId ? (await deliveryStatus(ids, requireSettled)).ready : true;
-  return Array.isArray(roomRows) && roomRows.length === 0 &&
-    firebaseUsers.users.length === 0 &&
-    (await Promise.all(ids.map(supabaseUserAbsent))).every(Boolean) &&
-    accessDenyAll && (!roomLive || !roomLive.exists()) && deliveryReady;
+  const state = {
+    roomAbsent: Array.isArray(roomRows) && roomRows.length === 0,
+    firebaseAuthAbsent: firebaseUsers.users.length === 0,
+    supabaseAuthAbsent: (await Promise.all(ids.map(supabaseUserAbsent))).every(Boolean),
+    accessDenyAll,
+    roomLiveAbsent: !roomLive || !roomLive.exists(),
+    deliveryReady,
+  };
+  return {...state, ready: Object.values(state).every(Boolean)};
+}
+
+async function cleanupBackendConverged(requireSettled = true) {
+  return (await cleanupBackendState(requireSettled)).ready;
 }
 
 async function cleanupResidualsAbsent() {
@@ -256,18 +265,28 @@ async function cleanup() {
   // delivery RPC proves every exact user/room/chat outbox revision is ACKed.
   const deadline = Date.now() + 240_000;
   let converged = false;
+  let lastCleanupDiagnostic = {error: "not_checked"};
   while (Date.now() < deadline) {
     try {
-      if (await cleanupBackendConverged() &&
+      lastCleanupDiagnostic = await cleanupBackendState();
+      if (lastCleanupDiagnostic.ready &&
           (!roomId || Date.now() - (roomDeletedAt || cleanupStartedAt) >= 95_000)) {
         converged = true;
         break;
       }
-    } catch {}
+    } catch (error) {
+      const candidate = error?.message;
+      lastCleanupDiagnostic = {error:
+        typeof candidate === "string" && /^[a-z0-9_:,-]{1,120}$/i.test(candidate) ?
+          candidate : "cleanup_readback_error"};
+    }
     await wakeWorkers();
     await new Promise((resolve) => setTimeout(resolve, 10_000));
   }
-  if (!converged) failures.add("cleanup_not_converged");
+  if (!converged) {
+    console.error(JSON.stringify({cleanupDiagnostic: lastCleanupDiagnostic}));
+    failures.add("cleanup_not_converged");
+  }
 
   // Finalize fully delivered source tombstones transactionally before removing
   // their exact RTDB mirrors. This also prevents daily reconciliation from
