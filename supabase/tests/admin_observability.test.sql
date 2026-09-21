@@ -98,8 +98,8 @@ select is(
 select is((public.admin_downloads(7) ->> 'isStale')::boolean, true, 'collector delay is reported as stale');
 select is(
   (select (metric ->> 'today')::integer
-   from jsonb_array_elements(public.admin_downloads(7) -> 'channels') metric
-   where metric ->> 'channel' = 'legacy_unclassified'),
+   from jsonb_array_elements(public.admin_downloads(7) -> 'platforms') metric
+   where metric ->> 'platform' = 'macos'),
   0,
   'first same-day snapshot is a baseline and not a today increment'
 );
@@ -129,17 +129,16 @@ select is(
 );
 select is(
   (select (metric ->> 'total')::integer
-   from jsonb_array_elements(public.admin_downloads(7) -> 'channels') metric
-   where metric ->> 'channel' = 'legacy_unclassified'),
-  104,
-  'historical mixed counter remains in the legacy channel'
+   from jsonb_array_elements(public.admin_downloads(7) -> 'platforms') metric
+   where metric ->> 'platform' = 'macos'),
+  105,
+  'historical and current DMG counters are preserved in the macOS platform total'
 );
 select is(
-  (select (metric ->> 'total')::integer
-   from jsonb_array_elements(public.admin_downloads(7) -> 'channels') metric
-   where metric ->> 'channel' = 'direct_dmg'),
-  1,
-  'only the post-split delta is attributed to direct DMG'
+  (select sum((metric ->> 'total')::integer)
+   from jsonb_array_elements(public.admin_downloads(7) -> 'platforms') metric),
+  105::bigint,
+  'platform aggregation does not lose post-split increments'
 );
 select throws_ok(
   $$select public.admin_ingest_download_metrics(
@@ -164,17 +163,17 @@ set local role service_role;
 select set_config('request.jwt.claim.role', 'service_role', true);
 select is(
   (select (metric ->> 'total')::integer
-   from jsonb_array_elements(public.admin_downloads(7) -> 'channels') metric
-   where metric ->> 'channel' = 'homebrew_dmg'),
+   from jsonb_array_elements(public.admin_downloads(7) -> 'versions') metric
+   where metric ->> 'assetName' = 'SIDEY-macOS-arm64-v1.0.5-homebrew.dmg'),
   13,
   'Homebrew cumulative total includes the pre-midnight baseline'
 );
 select is(
   (select (metric ->> 'today')::integer
-   from jsonb_array_elements(public.admin_downloads(7) -> 'channels') metric
-   where metric ->> 'channel' = 'homebrew_dmg'),
-  3,
-  'KST today includes only the post-midnight counter delta'
+   from jsonb_array_elements(public.admin_downloads(7) -> 'platforms') metric
+   where metric ->> 'platform' = 'macos'),
+  8,
+  'KST today adds only the post-midnight Homebrew delta to prior macOS increments'
 );
 
 select * from finish();
