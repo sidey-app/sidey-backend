@@ -22,6 +22,16 @@ select ok(
   ),
   'service role can inspect exact Firebase delivery state'
 );
+select ok(
+  not has_function_privilege(
+    'anon', 'public.firebase_access_delivery_snapshot(uuid)', 'execute'
+  ) and not has_function_privilege(
+    'authenticated', 'public.firebase_access_delivery_snapshot(uuid)', 'execute'
+  ) and has_function_privilege(
+    'service_role', 'public.firebase_access_delivery_snapshot(uuid)', 'execute'
+  ),
+  'only service role can request a delivery snapshot'
+);
 select throws_ok(
   $$select public.firebase_delivery_status('{}'::uuid[],
     'd2000000-0000-4000-8000-000000000001')$$,
@@ -82,6 +92,19 @@ select is(
    where user_id = 'd1000000-0000-4000-8000-000000000001'),
   0,
   'test access tombstone is removed'
+);
+select is(
+  public.firebase_access_delivery_snapshot(
+    'd1000000-0000-4000-8000-000000000001'
+  ),
+  null,
+  'a stale worker cannot recreate a finalized access tombstone'
+);
+select is(
+  (select count(*)::integer from private.firebase_access_outbox
+   where user_id = 'd1000000-0000-4000-8000-000000000001'),
+  0,
+  'stale delivery snapshot keeps the finalized access tombstone absent'
 );
 select is(
   (select count(*)::integer from private.firebase_room_revision_outbox

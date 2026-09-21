@@ -134,9 +134,12 @@ async function runAccessWorker() {
   const result = await synchronizeAccess({
     database: getDatabase(),
     config: supabaseConfig.value(),
-    onFailure: (error) => logger.error("Access synchronization item failed", {
-      code: typeof error?.message === "string" ? error.message : "unknown_access_error",
-    }),
+    onFailure: (error) => {
+      const candidate = typeof error?.code === "string" ? error.code : error?.message;
+      const code = typeof candidate === "string" && /^[a-z0-9_]{1,80}$/i.test(candidate) ?
+        candidate : "access_item_failed";
+      logger.error("Access synchronization item failed", {code});
+    },
   });
   if (result.failed) logger.error("Access synchronization pending retries", result);
   if (result.quarantined) logger.error("Access snapshots quarantined as deny-all", result);

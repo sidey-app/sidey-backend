@@ -37,6 +37,10 @@ async function cleanupRevokedRooms(database, userId, access) {
   }
   for (const [sessionId, rooms] of Object.entries(cleanupSessions)) {
     for (const roomId of Object.keys(rooms)) {
+      // Deleting the user's room-level typing subtree already removes every
+      // session slot below it. Firebase rejects a multi-location update that
+      // contains both an ancestor and one of its descendants.
+      if (cleanupRooms.includes(roomId)) continue;
       updates[`v2/l/${roomId}/t/${userId}/${sessionId}`] = null;
     }
     updates[`v2/a/u/${userId}/cleanup_sessions/${sessionId}`] = null;
@@ -147,13 +151,20 @@ async function synchronizeAccess({database, config, rpc = accessRpc, onFailure =
   let delivered = 0;
   let failed = 0;
   let quarantined = 0;
+  let stale = 0;
   let cursor = 0;
   await Promise.all(Array.from({length: Math.min(10, pending.length)}, async () => {
     while (cursor < pending.length) {
       const job = pending[cursor++];
       try {
         const queued = parsePendingJob(job);
-        const payload = await rpc(config, "firebase_access_snapshot", {p_user_id: queued.userId});
+        const payload = await rpc(config, "firebase_access_delivery_snapshot", {
+          p_user_id: queued.userId,
+        });
+        if (payload === null) {
+          stale++;
+          continue;
+        }
         let access;
         try {
           access = parseAccessSnapshot(payload, queued.userId);
@@ -196,7 +207,7 @@ async function synchronizeAccess({database, config, rpc = accessRpc, onFailure =
   const validUntil = Math.min(status.checked_at, status.oldest_pending_at ?? Infinity) + SYNC_LEASE_MS;
   await database.ref("/v2/a/s/v").transaction((current) =>
     Math.max(Number.isSafeInteger(current) ? current : 0, validUntil), undefined, false);
-  return {delivered, failed, quarantined, validUntil};
+  return {delivered, failed, quarantined, stale, validUntil};
 }
 
 module.exports = {applyAccessSnapshot, authorizedWake, synchronizeAccess, SYNC_LEASE_MS};

@@ -39,6 +39,8 @@ test.before(async () => {
   await db.exec(fs.readFileSync(path.join(migrations, "20260919165358_firebase_event_driven_access.sql"), "utf8"));
   await db.exec(fs.readFileSync(path.join(migrations,
     "20260919224714_firebase_access_failure_isolation.sql"), "utf8"));
+  await db.exec(fs.readFileSync(path.join(migrations,
+    "20260921070944_firebase_access_delivery_snapshot.sql"), "utf8"));
 });
 
 test.after(async () => { await db?.close(); });
@@ -60,12 +62,24 @@ test("only bootstrapped users enter the outbox and clients cannot invoke privile
   assert.deepEqual(state.rooms, [room]);
   assert.equal(state.active, true);
   assert.ok(state.sessions[sid] > Date.now());
-  for (const name of ["firebase_access_snapshot(uuid)", "firebase_access_pending(integer)",
+  for (const name of ["firebase_access_snapshot(uuid)", "firebase_access_delivery_snapshot(uuid)",
+    "firebase_access_pending(integer)",
     "firebase_access_ack(uuid,text)", "firebase_access_status()", "firebase_access_reconcile()"]) {
     assert.equal(await scalar("select has_function_privilege('authenticated',$1,'execute') as value", [name]), false);
     assert.equal(await scalar("select has_function_privilege('anon',$1,'execute') as value", [name]), false);
     assert.equal(await scalar("select has_function_privilege('service_role',$1,'execute') as value", [name]), true);
   }
+});
+
+test("delivery snapshot never recreates a finalized access row", async () => {
+  await snapshot();
+  await db.query("delete from private.firebase_access_outbox where user_id=$1", [uid]);
+  assert.equal(await scalar(
+    "select public.firebase_access_delivery_snapshot($1) is null as value", [uid],
+  ), true);
+  assert.equal(await scalar(
+    "select count(*)::int as value from private.firebase_access_outbox where user_id=$1", [uid],
+  ), 0);
 });
 
 test("purchase grants and refund revokes ownership, stale ACK cannot erase the refund", async () => {

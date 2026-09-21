@@ -303,6 +303,7 @@ async function cleanup() {
   if (failures.size) throw new Error(`cleanup_failed:${[...failures].join(",")}`);
 }
 
+let smokeResult = null;
 try {
   const owner = await createTemporaryUser(`검증${Date.now().toString().slice(-4)}`.slice(0, 8));
   const peers = [];
@@ -354,14 +355,15 @@ try {
     throw new Error("compact_throw_not_converged");
   }
 
-  console.log(JSON.stringify({
+  smokeResult = {
     status: "pass",
     databaseInstance: "sidey",
     callable: true,
     chatSequence: sent.n,
     compactThrow: true,
     users: users.length,
-  }));
+  };
 } finally {
   await cleanup();
 }
+console.log(JSON.stringify(smokeResult));

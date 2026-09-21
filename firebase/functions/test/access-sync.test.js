@@ -31,6 +31,14 @@ function fakeDatabase() {
         database.failNextUpdate = false;
         throw new Error("simulated_cleanup_failure");
       }
+      const paths = Object.keys(updates).sort();
+      for (let index = 0; index < paths.length; index++) {
+        for (let candidate = index + 1; candidate < paths.length; candidate++) {
+          if (paths[candidate].startsWith(`${paths[index]}/`)) {
+            throw new Error("ancestor_path_conflict");
+          }
+        }
+      }
       for (const [relativePath, value] of Object.entries(updates)) {
         const absolutePath = `/${relativePath}`;
         if (value === null) removeTree(absolutePath);
@@ -55,6 +63,21 @@ test("refund and kick replace permissions atomically; stale grants cannot resurr
   assert.deepEqual(current.wire_items, {});
   assert.deepEqual(current.sessions, {});
   assert.equal(db.values.get(`/v2/n/${uid}/a`), rev(3));
+});
+
+test("account revocation coalesces room and session typing cleanup paths", async () => {
+  const db = fakeDatabase();
+  await applyAccessSnapshot(db, parseAccessSnapshot(wire(), uid));
+  const typingPath = `/v2/l/${room}/t/${uid}/${sid}`;
+  db.values.set(typingPath, Date.now());
+
+  await applyAccessSnapshot(db, parseAccessSnapshot({
+    ...wire(2), active: false, rooms: [], items: [], wire_items: [], sessions: {},
+  }, uid));
+
+  assert.equal(db.values.has(typingPath), false);
+  assert.equal(db.values.get(`/v2/a/u/${uid}`).cleanup_rooms, undefined);
+  assert.equal(db.values.get(`/v2/a/u/${uid}`).cleanup_sessions, undefined);
 });
 
 test("redelivery and daily reconciliation repair equal-version corruption", async () => {
@@ -194,13 +217,14 @@ test("successful jobs ACK exact revisions and health uses database observation t
   const result = await synchronizeAccess({database: db, config: {}, rpc: async (_, name, args) => {
     calls.push([name, args]);
     if (name === "firebase_access_pending") return [{user_id: uid, revision: rev(1)}];
-    if (name === "firebase_access_snapshot") return wire();
+    if (name === "firebase_access_delivery_snapshot") return wire();
     if (name === "firebase_access_status") return {checked_at: 1000, oldest_pending_at: null};
     return null;
   }});
   assert.equal(result.delivered, 1);
   assert.equal(result.failed, 0);
   assert.equal(result.quarantined, 0);
+  assert.equal(result.stale, 0);
   assert.equal(result.validUntil, 1000 + SYNC_LEASE_MS);
   assert.deepEqual(calls.find(([name]) => name === "firebase_access_ack")[1],
     {p_user_id: uid, p_revision: rev(1)});
@@ -211,7 +235,7 @@ test("delivery failures remain pending and cannot renew past the oldest missed c
   let acked = false;
   const result = await synchronizeAccess({database: db, config: {}, rpc: async (_, name) => {
     if (name === "firebase_access_pending") return [{user_id: uid, revision: rev(1)}];
-    if (name === "firebase_access_snapshot") throw new Error("database unavailable");
+    if (name === "firebase_access_delivery_snapshot") throw new Error("database unavailable");
     if (name === "firebase_access_ack") acked = true;
     if (name === "firebase_access_status") return {checked_at: 500_000, oldest_pending_at: 1000};
   }});
@@ -227,7 +251,7 @@ test("malformed successful snapshots quarantine only that user and ACK the exact
   const result = await synchronizeAccess({database: db, config: {}, rpc: async (_, name, args) => {
     calls.push([name, args]);
     if (name === "firebase_access_pending") return [{user_id: uid, revision: rev(2)}];
-    if (name === "firebase_access_snapshot") return {...wire(2), rooms: ["unsafe"]};
+    if (name === "firebase_access_delivery_snapshot") return {...wire(2), rooms: ["unsafe"]};
     if (name === "firebase_access_status") return {checked_at: 1000, oldest_pending_at: null};
     return null;
   }});
@@ -235,11 +259,29 @@ test("malformed successful snapshots quarantine only that user and ACK the exact
   assert.equal(result.delivered, 1);
   assert.equal(result.failed, 0);
   assert.equal(result.quarantined, 1);
+  assert.equal(result.stale, 0);
   assert.deepEqual(db.values.get(`/v2/a/u/${uid}`), {
     revision: rev(2), active: false, rooms: {}, items: {}, wire_items: {}, sessions: {},
   });
   assert.deepEqual(calls.find(([name]) => name === "firebase_access_ack")[1],
     {p_user_id: uid, p_revision: rev(2)});
+});
+
+test("a finalized stale pending-list entry is skipped without recreation or ACK", async () => {
+  const db = fakeDatabase();
+  const calls = [];
+  const result = await synchronizeAccess({database: db, config: {}, rpc: async (_, name, args) => {
+    calls.push([name, args]);
+    if (name === "firebase_access_pending") return [{user_id: uid, revision: rev(7)}];
+    if (name === "firebase_access_delivery_snapshot") return null;
+    if (name === "firebase_access_status") return {checked_at: 1000, oldest_pending_at: null};
+    return null;
+  }});
+
+  assert.equal(result.delivered, 0);
+  assert.equal(result.failed, 0);
+  assert.equal(result.stale, 1);
+  assert.equal(calls.some(([name]) => name === "firebase_access_ack"), false);
 });
 
 test("source database outage or malformed health response cannot grant a fresh lease", async () => {
