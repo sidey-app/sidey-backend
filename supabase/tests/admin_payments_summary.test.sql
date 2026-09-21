@@ -57,6 +57,14 @@ insert into auth.users (
    'authenticated', 'authenticated', 'buyer-two@sidey.app',
    '{"provider":"email","providers":["email"]}', '{}', false, now(), now());
 
+-- Complimentary ownership is deliberately outside the paid transaction ledgers.
+insert into private.commerce_grants (
+  user_id, entitlement_key, source_kind, source_reference, status, granted_at
+) values (
+  'ae000000-0000-0000-0000-000000000002', 'character:pixel_monkey',
+  'complimentary', 'summary-complimentary-grant', 'active', '2026-09-15T15:15:00Z'
+);
+
 insert into private.app_store_transactions (
   transaction_id, original_transaction_id, product_id, store_product_id,
   user_id, app_account_token, environment, status, binding_state,
@@ -206,8 +214,18 @@ select throws_ok(
 select ok(
   public.admin_payments_summary(
     '2026-09-15T15:00:00Z', '2026-09-16T15:00:00Z', 'all', '', 'all'
-  ) ?& array['generatedAt', 'catalog', 'appStore', 'web', 'products'],
+  ) ?& array['generatedAt', 'catalog', 'combined', 'appStore', 'web', 'products'],
   'summary exposes the complete top-level camelCase contract'
+);
+select ok(
+  (public.admin_payments_summary(
+    '2026-09-15T15:00:00Z', '2026-09-16T15:00:00Z', 'all', '', 'all'
+  ) -> 'combined') ?& array[
+    'transactionCount', 'activeTransactionCount',
+    'refundedOrRevokedTransactionCount', 'appStoreActiveAmountKrw',
+    'webActiveAmountKrw', 'activePurchaseAmountKrw'
+  ],
+  'combined summary exposes every contracted field'
 );
 select ok(
   (public.admin_payments_summary(
@@ -224,7 +242,7 @@ select ok(
   (public.admin_payments_summary(
     '2026-09-15T15:00:00Z', '2026-09-16T15:00:00Z', 'all', '', 'all'
   ) -> 'web') ?& array[
-    'transactionCount', 'purchaserCount', 'approvedTransactionCount',
+    'transactionCount', 'purchaserCount', 'activeTransactionCount',
     'refundedTransactionCount', 'purchaseAmountKrw', 'refundedAmountKrw',
     'activeAmountKrw'
   ],
@@ -238,7 +256,8 @@ select ok(
     'appStoreTransactionCount', 'appStoreActiveTransactionCount',
     'appStoreRevokedTransactionCount', 'appStoreEstimatedPurchaseKrw',
     'appStoreEstimatedActiveKrw', 'appStoreMissingPriceTransactionCount',
-    'webTransactionCount', 'webRefundedTransactionCount', 'webPurchaseAmountKrw',
+    'webTransactionCount', 'webActiveTransactionCount',
+    'webRefundedTransactionCount', 'webPurchaseAmountKrw',
     'webRefundedAmountKrw', 'webActiveAmountKrw'
   ],
   'product rows expose every contracted field'
@@ -310,9 +329,9 @@ select is(
 );
 select is(
   (public.admin_payments_summary('2026-09-15T15:00:00Z', '2026-09-16T15:00:00Z', 'all', '', 'all')
-    -> 'web' ->> 'approvedTransactionCount')::integer,
+    -> 'web' ->> 'activeTransactionCount')::integer,
   2,
-  'web approved count includes transactions with a remaining active balance'
+  'web active count includes transactions with a remaining active balance'
 );
 select is(
   (public.admin_payments_summary('2026-09-15T15:00:00Z', '2026-09-16T15:00:00Z', 'all', '', 'all')
@@ -331,6 +350,42 @@ select is(
     -> 'web' ->> 'activeAmountKrw')::bigint,
   3300::bigint,
   'web active amount is the verified PortOne balance'
+);
+select is(
+  (public.admin_payments_summary('2026-09-15T15:00:00Z', '2026-09-16T15:00:00Z', 'all', '', 'all')
+    -> 'combined' ->> 'transactionCount')::integer,
+  7,
+  'combined transaction count includes only App Store Production and PortOne LIVE purchases'
+);
+select is(
+  (public.admin_payments_summary('2026-09-15T15:00:00Z', '2026-09-16T15:00:00Z', 'all', '', 'all')
+    -> 'combined' ->> 'activeTransactionCount')::integer,
+  4,
+  'combined active count excludes complimentary grants and fully refunded or revoked purchases'
+);
+select is(
+  (public.admin_payments_summary('2026-09-15T15:00:00Z', '2026-09-16T15:00:00Z', 'all', '', 'all')
+    -> 'combined' ->> 'refundedOrRevokedTransactionCount')::integer,
+  4,
+  'combined refund or revocation count includes App Store and PortOne reversals'
+);
+select is(
+  (public.admin_payments_summary('2026-09-15T15:00:00Z', '2026-09-16T15:00:00Z', 'all', '', 'all')
+    -> 'combined' ->> 'appStoreActiveAmountKrw')::bigint,
+  1100::bigint,
+  'combined App Store active amount uses the pinned current catalog price'
+);
+select is(
+  (public.admin_payments_summary('2026-09-15T15:00:00Z', '2026-09-16T15:00:00Z', 'all', '', 'all')
+    -> 'combined' ->> 'webActiveAmountKrw')::bigint,
+  3300::bigint,
+  'combined web active amount uses the verified PortOne balance'
+);
+select is(
+  (public.admin_payments_summary('2026-09-15T15:00:00Z', '2026-09-16T15:00:00Z', 'all', '', 'all')
+    -> 'combined' ->> 'activePurchaseAmountKrw')::bigint,
+  4400::bigint,
+  'combined active purchase amount adds App Store current-price value and PortOne balance'
 );
 select is(
   (public.admin_payments_summary('2026-09-15T15:00:00Z', '2026-09-16T15:00:00Z', 'app_store', '', 'all')
@@ -360,12 +415,27 @@ select is(
   'web card totals follow the product search and kind filters'
 );
 select is(
+  (select (product ->> 'webActiveTransactionCount')::integer
+   from jsonb_array_elements(public.admin_payments_summary(
+     '2026-09-15T15:00:00Z', '2026-09-16T15:00:00Z', 'web', '핑크 토끼', 'bubble'
+   ) -> 'products') product),
+  1,
+  'a partially refunded PortOne transaction remains active while balance remains'
+);
+select is(
   (select (product ->> 'webRefundedTransactionCount')::integer
    from jsonb_array_elements(public.admin_payments_summary(
      '2026-09-15T15:00:00Z', '2026-09-16T15:00:00Z', 'web', '핑크 토끼', 'bubble'
    ) -> 'products') product),
   1,
   'product refund count includes a partial PortOne refund'
+);
+select is(
+  (public.admin_payments_summary(
+    '2026-09-15T15:00:00Z', '2026-09-16T15:00:00Z', 'all', '', 'all'
+  ) -> 'products' -> 0 ->> 'productId'),
+  'character_guinea_pig',
+  'product rows sort by combined active transaction count descending'
 );
 
 select is(

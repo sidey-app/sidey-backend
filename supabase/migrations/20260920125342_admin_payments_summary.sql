@@ -129,6 +129,7 @@ begin
   ), web_by_product as (
     select product_id,
            count(*)::bigint as transaction_count,
+           count(*) filter (where balance_amount_krw > 0)::bigint as active_count,
            count(*) filter (where balance_amount_krw < amount_krw)::bigint as refunded_count,
            coalesce(sum(amount_krw), 0)::bigint as purchase_krw,
            coalesce(sum(amount_krw - balance_amount_krw), 0)::bigint as refunded_krw,
@@ -185,7 +186,7 @@ begin
   ), web_totals as (
     select count(*)::bigint as transaction_count,
            count(distinct user_id)::bigint as purchaser_count,
-           count(*) filter (where balance_amount_krw > 0)::bigint as approved_count,
+           count(*) filter (where balance_amount_krw > 0)::bigint as active_count,
            count(*) filter (where balance_amount_krw < amount_krw)::bigint as refunded_count,
            coalesce(sum(amount_krw), 0)::bigint as purchase_krw,
            coalesce(sum(amount_krw - balance_amount_krw), 0)::bigint as refunded_krw,
@@ -206,6 +207,7 @@ begin
            case when filtered.app_store_price_krw is null then coalesce(app_store.transaction_count, 0)
                 else 0 end::bigint as app_store_missing_price_count,
            coalesce(web.transaction_count, 0)::bigint as web_transaction_count,
+           coalesce(web.active_count, 0)::bigint as web_active_count,
            coalesce(web.refunded_count, 0)::bigint as web_refunded_count,
            coalesce(web.purchase_krw, 0)::bigint as web_purchase_krw,
            coalesce(web.refunded_krw, 0)::bigint as web_refunded_krw,
@@ -225,6 +227,16 @@ begin
       'sourceCommit', catalog_metadata.source_commit,
       'priceEffectiveAt', catalog_metadata.price_effective_at,
       'currency', catalog_metadata.currency
+    ),
+    'combined', jsonb_build_object(
+      'transactionCount', app_store_totals.transaction_count + web_totals.transaction_count,
+      'activeTransactionCount', app_store_totals.active_count + web_totals.active_count,
+      'refundedOrRevokedTransactionCount',
+        app_store_totals.refunded_count + app_store_totals.revoked_count
+        + web_totals.refunded_count,
+      'appStoreActiveAmountKrw', app_store_estimates.active_krw,
+      'webActiveAmountKrw', web_totals.active_krw,
+      'activePurchaseAmountKrw', app_store_estimates.active_krw + web_totals.active_krw
     ),
     'appStore', jsonb_build_object(
       'transactionCount', app_store_totals.transaction_count,
@@ -247,7 +259,7 @@ begin
     'web', jsonb_build_object(
       'transactionCount', web_totals.transaction_count,
       'purchaserCount', web_totals.purchaser_count,
-      'approvedTransactionCount', web_totals.approved_count,
+      'activeTransactionCount', web_totals.active_count,
       'refundedTransactionCount', web_totals.refunded_count,
       'purchaseAmountKrw', web_totals.purchase_krw,
       'refundedAmountKrw', web_totals.refunded_krw,
@@ -265,11 +277,12 @@ begin
       'appStoreEstimatedActiveKrw', app_store_active_krw,
       'appStoreMissingPriceTransactionCount', app_store_missing_price_count,
       'webTransactionCount', web_transaction_count,
+      'webActiveTransactionCount', web_active_count,
       'webRefundedTransactionCount', web_refunded_count,
       'webPurchaseAmountKrw', web_purchase_krw,
       'webRefundedAmountKrw', web_refunded_krw,
       'webActiveAmountKrw', web_active_krw
-    ) order by app_store_transaction_count + web_transaction_count desc, product_name, product_id)
+    ) order by app_store_active_count + web_active_count desc, product_name, product_id)
     from product_rows), '[]'::jsonb)
   ) into result
   from app_store_totals

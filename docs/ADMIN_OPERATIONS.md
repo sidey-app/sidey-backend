@@ -30,7 +30,8 @@ DB 권한·집계·검증 서버 테스트는 이 저장소에서 실행한다. 
 - `20260915000000_admin_app_store_revenue.sql`이 먼저 적용되어 App Store Production 거래의 금액 필드와 환경·구매일 인덱스가 존재해야 한다.
 - 그 다음 저장소 migration 순서대로 PortOne `CARD` 지원을 포함한 `20260919151111_support_portone_card.sql`까지 적용한 뒤, `20260920125342_admin_payments_summary.sql`을 적용한다.
 - 새 migration은 공개 카탈로그 커밋 `96f62abc0b350791de8e0d7c3b3af33f4e73dae6`의 2026-09-16 02:20:05 KST App Store 정가를 private 스냅샷으로 고정한다. 추정액은 이 가격만 사용하며 Apple이 서명한 실제 금액과 PortOne LIVE 잔액은 별도 항목으로 반환한다.
-- PortOne 승인 건수는 현재 유효 잔액이 0원보다 큰 거래, 환불 건수는 전액·부분 환불로 잔액이 최초 결제액보다 작은 거래로 정의한다. 따라서 부분 환불 거래는 두 건수에 모두 포함될 수 있다.
+- 합산 운영 요약은 App Store Production 거래와 검증된 PortOne LIVE 주문만 사용한다. 무료·포함 지급을 포함한 `complimentary` grant와 보유권 projection은 집계하지 않는다. 유효 구매액은 App Store 유효 거래 수에 고정 정가를 적용한 금액과 PortOne 유효 잔액을 더하며, 상품별 유효 판매 수는 두 채널의 유효 거래 수를 더한다.
+- PortOne 유효 건수는 현재 유효 잔액이 0원보다 큰 거래, 환불 건수는 전액·부분 환불로 잔액이 최초 결제액보다 작은 거래로 정의한다. 따라서 부분 환불 거래는 두 건수에 모두 포함될 수 있다.
 - 이 변경은 검토 가능한 SQL과 로컬 검증만 준비한다. 운영 project는 미적용 상태이며, `supabase db push`나 production SQL 실행은 별도 승인 없이 하지 않는다.
 
 격리 로컬 DB에서 합성 거래 10만 건의 실행 계획·버퍼 사용량을 재현하려면 로컬 migration을 적용한 뒤 다음을 실행한다. 스크립트는 트랜잭션 끝에서 rollback하므로 합성 거래를 남기지 않는다.
