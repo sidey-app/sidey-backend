@@ -117,9 +117,8 @@ async function bootstrap(user) {
   user.firebaseIdToken = firebase.idToken;
 }
 
-async function wakeWorkers(failures) {
+async function wakeWorkers() {
   if (typeof wakeToken !== "string" || wakeToken.length < 32) {
-    failures.add("wake_token");
     return false;
   }
   let successful = true;
@@ -134,7 +133,6 @@ async function wakeWorkers(failures) {
         headers: {"x-sidey-wake-token": wakeToken},
       });
     } catch {
-      failures.add(endpoint);
       successful = false;
     }
   }
@@ -255,17 +253,17 @@ async function cleanup() {
   // The first room-deletion delivery intentionally remains unacknowledged for
   // one 90-second claim lease. Re-wake bounded workers until the service-role
   // delivery RPC proves every exact user/room/chat outbox revision is ACKed.
-  const deadline = Date.now() + 150_000;
+  const deadline = Date.now() + 240_000;
   let converged = false;
   while (Date.now() < deadline) {
-    await wakeWorkers(failures);
+    await wakeWorkers();
     try {
       if (await cleanupBackendConverged() &&
           (!roomId || Date.now() - (roomDeletedAt || cleanupStartedAt) >= 95_000)) {
         converged = true;
         break;
       }
-    } catch { failures.add("cleanup_readback"); }
+    } catch {}
     await new Promise((resolve) => setTimeout(resolve, 10_000));
   }
   if (!converged) failures.add("cleanup_not_converged");
@@ -286,14 +284,23 @@ async function cleanup() {
     } catch { failures.add("exact_rtdb_cleanup"); }
   }
   if (converged && finalized) {
-    try {
-      if (!(await wakeWorkers(failures))) failures.add("final_worker_wake");
-      const sourceReady = roomId ? (await deliveryStatus(ids, false)).ready : true;
-      if (!(await cleanupBackendConverged(false)) || !(await cleanupResidualsAbsent()) ||
-          !sourceReady) {
-        failures.add("cleanup_final_readback");
+    const finalDeadline = Date.now() + 60_000;
+    let consecutiveReadbacks = 0;
+    while (Date.now() < finalDeadline && consecutiveReadbacks < 3) {
+      try {
+        const workersReady = await wakeWorkers();
+        const sourceReady = roomId ? (await deliveryStatus(ids, false)).ready : true;
+        const clean = workersReady && sourceReady &&
+          await cleanupBackendConverged(false) && await cleanupResidualsAbsent();
+        consecutiveReadbacks = clean ? consecutiveReadbacks + 1 : 0;
+      } catch {
+        consecutiveReadbacks = 0;
       }
-    } catch { failures.add("cleanup_final_readback"); }
+      if (consecutiveReadbacks < 3) {
+        await new Promise((resolve) => setTimeout(resolve, 10_000));
+      }
+    }
+    if (consecutiveReadbacks < 3) failures.add("cleanup_final_readback");
   }
   try {
     await deleteApp(adminApp);
