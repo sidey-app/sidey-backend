@@ -9,7 +9,7 @@
   },
   "scripts": {
     "check": "node --check index.js && node --check lib/supabase.js && node --check lib/access-sync.js && node --check lib/room-revision.js && node --check lib/realtime-chat.js && node --check test/staging-backend-smoke.mjs",
-    "test": "npm run check && node --test test/contract.test.js test/rest-sse-contract.test.mjs test/export.test.js test/supabase.test.js test/access-sync.test.js test/access-sql.test.js test/delivery-status-sql.test.js test/room-revision.test.js test/realtime-chat.test.js test/staging-delivery-status.test.mjs",
+    "test": "npm run check && node --test test/contract.test.js test/rest-sse-contract.test.mjs test/export.test.js test/supabase.test.js test/access-sync.test.js test/access-sql.test.js test/delivery-status-sql.test.js test/room-revision.test.js test/realtime-chat.test.js test/staging-delivery-status.test.mjs test/firebase-admin-credential.test.mjs",
     "test:rules": "node --test test/database-rules.test.js"
   },
   "dependencies": {

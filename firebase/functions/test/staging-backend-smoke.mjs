@@ -3,6 +3,7 @@ import {deleteApp, initializeApp} from "firebase-admin/app";
 import {getAuth} from "firebase-admin/auth";
 import {getDatabase} from "firebase-admin/database";
 import {validateDeliveryStatus} from "./support/delivery-status.mjs";
+import {firebaseAdminCredentialFromEnvironment} from "./support/firebase-admin-credential.mjs";
 
 const config = JSON.parse(process.env.SIDEY_SUPABASE_CONFIG || "null");
 const wakeToken = process.env.SIDEY_ACCESS_WAKE_TOKEN;
@@ -20,9 +21,11 @@ const callableUrl =
 const users = [];
 let roomId = null;
 let roomDeletedAt = null;
+const adminCredential = firebaseAdminCredentialFromEnvironment();
 const adminApp = initializeApp({
   projectId: "sidey-realtime",
   databaseURL: "https://sidey.asia-southeast1.firebasedatabase.app",
+  ...(adminCredential ? {credential: adminCredential} : {}),
 }, `gate1-smoke-${randomUUID()}`);
 const adminAuth = getAuth(adminApp);
 const adminDatabase = getDatabase(adminApp);
