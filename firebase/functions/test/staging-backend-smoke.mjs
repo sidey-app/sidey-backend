@@ -2,6 +2,7 @@ import {randomUUID} from "node:crypto";
 import {deleteApp, initializeApp} from "firebase-admin/app";
 import {getAuth} from "firebase-admin/auth";
 import {getDatabase} from "firebase-admin/database";
+import {validateDeliveryStatus} from "./support/delivery-status.mjs";
 
 const config = JSON.parse(process.env.SIDEY_SUPABASE_CONFIG || "null");
 const wakeToken = process.env.SIDEY_ACCESS_WAKE_TOKEN;
@@ -146,22 +147,13 @@ async function supabaseUserAbsent(userId) {
   throw new Error(`auth_readback_${response.status}`);
 }
 
-async function deliveryStatus(ids) {
+async function deliveryStatus(ids, requireSettled = true) {
   const value = await json(`${config.url}/rest/v1/rpc/firebase_delivery_status`, {
     method: "POST",
     headers: supabaseHeaders(config.serviceRoleKey, config.serviceRoleKey),
     body: JSON.stringify({p_user_ids: ids, p_room_id: roomId}),
   });
-  if (!value || typeof value.ready !== "boolean" ||
-      value.expected_users !== ids.length ||
-      !Number.isSafeInteger(value.settled_users) ||
-      !Number.isSafeInteger(value.access_pending) ||
-      !Number.isSafeInteger(value.room_pending) ||
-      !Number.isSafeInteger(value.chat_publish_pending) ||
-      !Number.isSafeInteger(value.chat_cleanup_pending)) {
-    throw new Error("invalid_delivery_status");
-  }
-  return value;
+  return validateDeliveryStatus(value, ids.length, {requireSettled});
 }
 
 async function finalizeDeletedDelivery(ids) {
@@ -172,7 +164,7 @@ async function finalizeDeletedDelivery(ids) {
   });
 }
 
-async function cleanupBackendConverged() {
+async function cleanupBackendConverged(requireSettled = true) {
   const ids = users.map((user) => user.id).filter(Boolean);
   if (ids.length !== users.length) return false;
   const roomRows = roomId ? await json(
@@ -192,7 +184,7 @@ async function cleanupBackendConverged() {
       Object.keys(value.cleanup_rooms || {}).length === 0 &&
       Object.keys(value.cleanup_sessions || {}).length === 0;
   });
-  const deliveryReady = roomId ? (await deliveryStatus(ids)).ready : true;
+  const deliveryReady = roomId ? (await deliveryStatus(ids, requireSettled)).ready : true;
   return Array.isArray(roomRows) && roomRows.length === 0 &&
     firebaseUsers.users.length === 0 &&
     (await Promise.all(ids.map(supabaseUserAbsent))).every(Boolean) &&
@@ -293,8 +285,8 @@ async function cleanup() {
   if (converged && finalized) {
     try {
       if (!(await wakeWorkers(failures))) failures.add("final_worker_wake");
-      const sourceReady = roomId ? (await deliveryStatus(ids)).ready : true;
-      if (!(await cleanupBackendConverged()) || !(await cleanupResidualsAbsent()) ||
+      const sourceReady = roomId ? (await deliveryStatus(ids, false)).ready : true;
+      if (!(await cleanupBackendConverged(false)) || !(await cleanupResidualsAbsent()) ||
           !sourceReady) {
         failures.add("cleanup_final_readback");
       }
