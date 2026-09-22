@@ -27,6 +27,10 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: services/app-store-verifier/package-lock.json
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
@@ -37,6 +41,16 @@ jobs:
         run: deno test supabase/functions/_shared/commerce.test.ts
       - name: Check commerce entrypoints
         run: deno check supabase/functions/commerce-order/index.ts supabase/functions/commerce-checkout/index.ts supabase/functions/commerce-complete/index.ts
+      - name: Test Firebase Functions source
+        working-directory: firebase/functions
+        run: npm ci && npm test
+      - name: Test Firebase RTDB rules
+        working-directory: firebase
+        run: npx -y firebase-tools@15.30.2 emulators:exec --only database --project demo-sidey --config firebase.emulator.json "npm --prefix functions run test:rules"
+      - name: Test Firebase Edge protocols and load harness
+        run: node --test scripts/realtime-tests/*.test.mjs
+      - name: Check Firebase Edge Functions
+        run: deno check supabase/functions/realtime-bootstrap/index.ts supabase/functions/realtime-publish/index.ts supabase/functions/realtime-publish-live/index.ts supabase/functions/realtime-event/index.ts supabase/functions/realtime-wake/index.ts
       - name: Verify pinned backend catalog mirrors
         run: python3 scripts/commerce_catalog.py --target shared --check
       - name: Test standalone catalog generation

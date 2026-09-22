@@ -1,0 +1,67 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "v2": {
+      "a": {
+        ".read": false,
+        ".write": false
+      },
+      "l": {
+        "$roomId": {
+          ".read": "auth != null && root.child('v2/a/g/e').val() === true && auth.token.sideyRolloutUntil != null && auth.token.sideyRolloutUntil > now && root.child('v2/a/s/v').val() > now && auth.token.sideySessionId != null && root.child('v2/a/u').child(auth.uid).child('active').val() === true && root.child('v2/a/u').child(auth.uid).child('sessions').child(auth.token.sideySessionId).val() > now && root.child('v2/a/u').child(auth.uid).child('rooms').child($roomId).val() === true && !root.child('v2/a/d').child($roomId).exists()",
+          "t": {
+            "$uid": {
+              "$sessionId": {
+                ".write": false,
+                ".validate": "newData.isNumber() && newData.val() >= now - 1000 && newData.val() <= now && (!data.exists() || newData.val() >= data.val() + 1500)"
+              }
+            }
+          },
+          "c": {
+            "$uid": {
+              ".write": false,
+              ".validate": "newData.isNumber() && newData.val() >= now - 1000 && newData.val() <= now && (!data.exists() || newData.val() >= data.val() + 1000)"
+            }
+          },
+          "x": {
+            "$uid": {
+              ".write": false,
+              ".validate": "newData.hasChildren(['u', 'k', 't']) && (!data.exists() || newData.child('t').val() >= data.child('t').val() + 500)",
+              "u": {
+                ".validate": "newData.isString() && newData.val().matches(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/)"
+              },
+              "k": {
+                ".validate": "newData.isString() && newData.val().matches(/^(0|[1-9][0-9]{0,5})$/)"
+              },
+              "t": {
+                ".validate": "newData.isNumber() && newData.val() >= now - 1000 && newData.val() <= now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "e": {
+            ".write": false
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "n": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid && root.child('v2/a/g/e').val() === true && auth.token.sideyRolloutUntil != null && auth.token.sideyRolloutUntil > now && root.child('v2/a/s/v').val() > now && auth.token.sideySessionId != null && root.child('v2/a/u').child(auth.uid).child('active').val() === true && root.child('v2/a/u').child(auth.uid).child('sessions').child(auth.token.sideySessionId).val() > now",
+          ".write": false
+        }
+      },
+      "$other": {
+        ".validate": false
+      }
+    },
+    "$other": {
+      ".validate": false
+    }
+  }
+}

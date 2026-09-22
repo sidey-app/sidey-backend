@@ -1,5 +1,9 @@
 # SIDEY 백엔드 문서
 
+- [Firebase v2 운영 구조와 현재 Gate](FIREBASE_V2.md)
+- [Firebase 비용·Presence 결정](FIREBASE_V2_COST_PRESENCE_DECISION.md)
+- [Firebase Realtime wire contract 초안](FIREBASE_REALTIME_WIRE_CONTRACT.md)
+- [Firebase Realtime hardening plan](FIREBASE_REALTIME_HARDENING_PLAN.md)
 - [서버 계약·변경 이력](SERVER_CONTRACT.md)
 - [운영 어드민·결제 조회 계약](ADMIN_OPERATIONS.md)
 - [App Store verifier 운영·배포·과거 가격 보완](../services/app-store-verifier/README.md)

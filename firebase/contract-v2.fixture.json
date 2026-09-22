@@ -1,0 +1,211 @@
+{
+  "protocolVersion": 2,
+  "status": {
+    "firebaseGate1": "deployed-and-verified",
+    "supabaseStaging": "validated-through-20260921070944",
+    "supabaseProduction": "not-migrated",
+    "compatibilityMigration": "local-candidate-20260921102516",
+    "wireCodeMigration": "local-candidate-20260921110000",
+    "compatibilityBridgeMigration": "local-candidate-20260921132018",
+    "clientRelease": "not-ready"
+  },
+  "projectId": "sidey-realtime",
+  "databaseInstance": "sidey",
+  "databaseURL": "https://sidey.asia-southeast1.firebasedatabase.app",
+  "region": "asia-southeast1",
+  "functionsCodebase": "sidey-v2",
+  "bootstrap": {
+    "kind": "https",
+    "function": "bootstrapRealtime",
+    "authorization": "Supabase Bearer token",
+    "method": "POST",
+    "request": {
+      "optionalKeys": ["minimumAccessRevision"],
+      "minimumAccessRevision": "20-digit-decimal-string",
+      "emptyObjectAllowed": true
+    },
+    "responseKeys": [
+      "accessRevision",
+      "authTokenLifetimeSeconds",
+      "customToken",
+      "databaseURL",
+      "firebaseApiKey",
+      "permissionSync",
+      "protocolVersion",
+      "refreshAfter",
+      "rolloutLeaseExpiresAt",
+      "rooms",
+      "wireItems"
+    ],
+    "errors": {
+      "400": "invalid_argument",
+      "401": "authentication_required",
+      "405": "method_not_allowed",
+      "409": ["realtime_grant_not_converged", "realtime_rollout_disabled"],
+      "429": "realtime_bootstrap_rate_limited",
+      "503": "realtime_bootstrap_unavailable"
+    }
+  },
+  "tokenLifecycle": {
+    "exchange": "Firebase Auth signInWithCustomToken",
+    "idTokenRefreshOwner": "Firebase Auth SDK",
+    "bootstrapPolling": true,
+    "refreshAfter": "rolloutLeaseExpiresAt-minus-30-seconds-epoch-ms",
+    "supabaseSessionClaim": "sideySessionId",
+    "rolloutLeaseClaim": "sideyRolloutUntil",
+    "rolloutLeaseMaximumSeconds": 300,
+    "renewal": "register-selector-then-bootstrap-before-refreshAfter",
+    "logoutOrAccountSwitch": "cancel-listeners-clear-firebase-auth-invalidate-generation"
+  },
+  "emergencyKill": {
+    "path": "/v2/a/g/e",
+    "enabledValue": true,
+    "missingOrFalse": "deny-rules-bootstrap-and-chat-callable",
+    "cohortRemovalMaximumSeconds": 300,
+    "globalKillPropagation": "immediate-rules-listener-revocation-and-per-request-server-check",
+    "disableOrder": "firebase-false-readback-then-supabase-off-readback",
+    "enableOrder": "firebase-false-readback-then-supabase-on-readback-then-firebase-true-readback"
+  },
+  "grantBarrier": {
+    "convergeOperation": "bootstrapRealtime",
+    "requestKey": "minimumAccessRevision",
+    "successCondition": "response-accessRevision-greater-than-or-equal-and-source-grant-still-valid",
+    "revisionComparison": "fixed-width-20-digit-lexical",
+    "supabaseRpcs": {
+      "createRoom": {
+        "name": "create_room_v2",
+        "responseKeys": ["accessRevision", "invite_code", "room_id"]
+      },
+      "joinRoom": {
+        "name": "join_room_v2",
+        "responseKeys": ["accessRevision", "error_code", "room_id"]
+      },
+      "equipCosmetic": {
+        "name": "set_equipped_cosmetic_v2",
+        "responseKeys": ["accessRevision", "profile"]
+      },
+      "postCommitFallback": "current_firebase_access_revision",
+      "storeState": "get_store_state_v2"
+    }
+  },
+  "chat": {
+    "kind": "callable",
+    "function": "sendRealtimeChat",
+    "requestKeys": ["b", "i", "r"],
+    "responseKeys": ["b", "i", "k?", "n", "t"],
+    "idempotencyKey": "i-client-message-uuid",
+    "errorMap": {
+      "authentication_required": "unauthenticated",
+      "membership_required": "permission-denied",
+      "message_rate_limited": "resource-exhausted",
+      "message_id_conflict": "failed-precondition",
+      "message_sequence_exhausted": "failed-precondition",
+      "realtime_rollout_disabled": "failed-precondition",
+      "invalid_argument": "invalid-argument",
+      "invalid_message_body": "invalid-argument",
+      "message_id_required": "invalid-argument",
+      "fallback": "unavailable"
+    },
+    "knownNonCommitCodes": [
+      "unauthenticated",
+      "permission-denied",
+      "resource-exhausted",
+      "failed-precondition",
+      "invalid-argument"
+    ],
+    "commitAmbiguousCodes": ["deadline-exceeded", "internal", "unavailable", "transport-error"],
+    "ambiguousRetry": "never-auto-resend-reconcile-by-client-message-uuid"
+  },
+  "paths": {
+    "accessRoot": "/v2/a",
+    "globalEmergencyGate": "/v2/a/g/e",
+    "accessHealth": "/v2/a/s/v",
+    "accessUser": "/v2/a/u/{uid}",
+    "roomTombstone": "/v2/a/d/{roomId}",
+    "bootstrapLimit": "/v2/a/b/{uid}",
+    "liveRoom": "/v2/l/{roomId}",
+    "typing": "/v2/l/{roomId}/t/{uid}/{sideySessionId}",
+    "pulse": "/v2/l/{roomId}/c/{uid}",
+    "throw": "/v2/l/{roomId}/x/{uid}",
+    "chatEvent": "/v2/l/{roomId}/e",
+    "inbox": "/v2/n/{uid}",
+    "accessRevision": "/v2/n/{uid}/a",
+    "roomRevision": "/v2/n/{uid}/r/{roomId}/v",
+    "chatSequence": "/v2/n/{uid}/r/{roomId}/n"
+  },
+  "payloads": {
+    "typing": "firebase-server-timestamp-number",
+    "pulse": "firebase-server-timestamp-number",
+    "throw": {
+      "keys": ["k", "t", "u"],
+      "k": "decimal-wire-code-string",
+      "t": "firebase-server-timestamp-number",
+      "u": "target-user-uuid"
+    },
+    "chatEvent": {
+      "keys": ["b", "i", "k?", "n", "s", "t"]
+    }
+  },
+  "transientReceiver": {
+    "compatibilityTransport": "supabase-private-broadcast-only",
+    "compactFirebasePaths": "reserved-receive-ignored",
+    "compactFirebaseClientWrites": false,
+    "futureTransitionContract": {
+      "status": "reserved-not-active",
+      "rulesTimestampWindowMs": {"minimum": "now-1000", "maximum": "now"},
+      "receiverFreshnessMs": 5000,
+      "initialSnapshot": "baseline-only-no-animation",
+      "reconnect": "animate-only-if-newer-than-per-slot-high-water-and-within-freshness-window",
+      "typingStop": "delete-exact-session-slot",
+      "lostWriteResponse": "do-not-immediately-retry",
+      "unknownWireCode": "drop-fail-closed"
+    }
+  },
+  "hints": {
+    "delivery": "duplicate-reordered-or-missing",
+    "revisionComparison": "fixed-width-20-digit-lexical",
+    "access": "bootstrap-with-current-revision-barrier",
+    "room": "reload-authoritative-supabase-room-snapshot",
+    "chatSequenceGap": "reload-supabase-three-day-history",
+    "permissionDenied": "fail-closed-never-silent-legacy-downgrade"
+  },
+  "presenceContract": {
+    "transport": "Supabase-private-Realtime-Presence",
+    "topic": "presence:{roomId}:{realtimeEpoch}:{targetUserId}",
+    "socket": "existing-supabase-realtime-socket",
+    "applicationHeartbeat": false,
+    "authorization": "viewer-and-target-current-room-members-and-writer-is-target-with-active-session"
+  },
+  "wireCodes": {
+    "sourceRpc": "get_store_state_v2",
+    "responseKey": "wireCode",
+    "catalogIdIsNotWireCode": true,
+    "defaultThrowable": {"wireCode": 0, "catalogItemId": "patch_soft_ball"},
+    "paidRange": [1, 999999],
+    "unknownIncoming": "drop-fail-closed",
+    "mappingMigration": "20260921110000_firebase_wire_code_contract",
+    "catalogSha256": "54e2f0298c4652d113e34374bc748fda829300e327ff9dd682df316fc149884b",
+    "productionMapping": "candidate-pinned-pending-M0-read-back"
+  },
+  "roomDeletion": {
+    "tombstone": "/v2/a/d/{roomId}",
+    "explicitDeleteAndLastMemberLeave": "same-tombstone-fencing-path",
+    "clientCleanup": "cancel-listeners-clear-room-cache-pending-chat-and-overlay"
+  },
+  "limits": {
+    "roomsPerUser": 5,
+    "membersPerRoom": 12,
+    "activeSessionsMirroredPerUser": 16,
+    "sourceSessionsValidatedPerUser": 128,
+    "chatGraphemes": 200,
+    "typingMinimumIntervalMs": 1500,
+    "pulseMinimumIntervalMs": 1000,
+    "throwMinimumIntervalMs": 500
+  },
+  "activeSessionSelection": {
+    "order": "expiry-desc-then-uuid-asc",
+    "excludedSessionBehavior": "fail-closed"
+  },
+  "presence": "supabase-private-realtime-only",
+  "appCheckEnforcement": false
+}

@@ -23,7 +23,7 @@ max_rows = 1000
 # `postgres` are reachable through the Data API roles (`anon`, `authenticated`, `service_role`)
 # without explicit GRANTs, matching the cloud default. Set to `false` to require explicit GRANTs
 # instead. Left unset, a fresh project falls back to `true`.
-# auto_expose_new_tables = true
+auto_expose_new_tables = false
 
 [api.tls]
 # Enable HTTPS endpoints locally using a self-signed certificate.
@@ -403,6 +403,23 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.commerce-refund]
+verify_jwt = false
+
+[functions.realtime-bootstrap]
+verify_jwt = true
+
+# Scheduler/wake authentication is enforced inside the service-owned handler.
+[functions.realtime-publish]
+verify_jwt = false
+
+[functions.realtime-publish-live]
+verify_jwt = false
+
+# The handler verifies the caller through its PostgREST authorization RPC.
+[functions.realtime-event]
+verify_jwt = false
+
+[functions.realtime-wake]
 verify_jwt = false
 
 # [edge_runtime.secrets]

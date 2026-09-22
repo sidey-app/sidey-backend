@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "schemaCanonicalizerVersion": 2,
+  "realtimeContractVersion": 2,
+  "appSchemaScope": "public,private,auth",
+  "rehearsal": {
+    "productionBase": {
+      "rawSha256": "b14dc8cec22b42ff51b46710a595b8f80174c21e7d0ddffe3d5762747158e7b6",
+      "canonicalAppSha256": "887ef6da07a1163236ec100477506db4ec8b80e6ec735805408e3ed220339dd8",
+      "realtimeContractSha256": "620204f57bdd524630b7f72c7e6d68a34113a4deb01c8d799e33315c98afb18e",
+      "fingerprintSha256": "75146abbdf282d15113eb3ebe792adf1b5bda65c48160a73b33fd8d2c1a759fe"
+    },
+    "restoredBase": {
+      "rawSha256": "8a8b196c72e97c9c291f6b1a9673fb6b4f7a4a0390d008c66ad44f85d7d481b9",
+      "canonicalAppSha256": "887ef6da07a1163236ec100477506db4ec8b80e6ec735805408e3ed220339dd8",
+      "realtimeContractSha256": "620204f57bdd524630b7f72c7e6d68a34113a4deb01c8d799e33315c98afb18e",
+      "fingerprintSha256": "75146abbdf282d15113eb3ebe792adf1b5bda65c48160a73b33fd8d2c1a759fe"
+    },
+    "prefix13": {
+      "firebasePrivateTableCount": 20,
+      "rawSha256": "4d189e7af273f396323b8d95478b230d8e6d093888f1009772d1a132a62a4f5e",
+      "canonicalAppSha256": "7f3550448f5ad886d2808eebda9579499ed8650d1be1fc8d472674e51c334899",
+      "realtimeContractSha256": "620204f57bdd524630b7f72c7e6d68a34113a4deb01c8d799e33315c98afb18e",
+      "fingerprintSha256": "6bca8bf82044e4b879a6c063b56d32ea7ecf16cf58e28b178bdce59d9d93e8d7"
+    },
+    "productionPrefix13": {
+      "firebasePrivateTableCount": 20,
+      "rawSha256": "fc544ac899b44bf59b3693b503d38b41d1f0b80a98583acb4c8e53db2265b27c",
+      "canonicalAppSha256": "f3910bb442327b0db6809f50cdb9d3cbb13d0e0039def87adee46e3e2704ab13",
+      "realtimeContractSha256": "620204f57bdd524630b7f72c7e6d68a34113a4deb01c8d799e33315c98afb18e",
+      "fingerprintSha256": "6953e8c9e761b082d313ad95d659bf2783768dc95e673d76b9b147ce5298a2e4",
+      "atomicRunnerExact": true
+    },
+    "prefix16": {
+      "firebasePrivateTableCount": 22,
+      "rawSha256": "e6fb36063c66fd3b5739fcc828abf98a3b342859fac35e5703bc5cc3bc16931b",
+      "canonicalAppSha256": "1423a158c452bf4fa30dd6245661004cb2f3fc4b59918ee4df8d4d323eea2374",
+      "realtimeContractSha256": "b2ea5e5bcd146bb952d48aedee92303821daefa967521279acf34d30f56c98e0",
+      "fingerprintSha256": "d0e32cdaa0e8d339733a66c2e7100548dd8c45491f554d29223bee6ac81cca0a"
+    },
+    "productionPrefix16": {
+      "firebasePrivateTableCount": 22,
+      "rawSha256": "05c05d7872b176c871fc3413b82ee0421dd15cbccc531e2602bfd9b325834692",
+      "canonicalAppSha256": "1e605541f91cd6d303157daf96af7f718a3ebc2a134c3871bbe7ee94213177cc",
+      "realtimeContractSha256": "b2ea5e5bcd146bb952d48aedee92303821daefa967521279acf34d30f56c98e0",
+      "fingerprintSha256": "2ff6af42ec3c4be6fbbabd90197e74ff2fc4ff3362b3faf16cfc65b247762e92",
+      "atomicRunnerExact": true
+    },
+    "prefix16Index": {
+      "firebasePrivateTableCount": 22,
+      "rawSha256": "7dad4a8eab9eda457a2804bc509f0f187cb43a38a55fe4a629c128cc53d0f96b",
+      "canonicalAppSha256": "7803c16aa2182ba4e31a4a3a66d33d4e079971d1deb75b2646c4a782c3ee3625",
+      "realtimeContractSha256": "b2ea5e5bcd146bb952d48aedee92303821daefa967521279acf34d30f56c98e0",
+      "fingerprintSha256": "1744817979a1da26221033c000869bab4910091b8c812507b648c13842f7cc1a"
+    },
+    "prefix16IndexHelper": {
+      "firebasePrivateTableCount": 22,
+      "rawSha256": "ccb014da5e15ecccb342b6c0d924e51e7480dba535c6970628583e0f173080fd",
+      "canonicalAppSha256": "ae314d7366bcb1b6541959eea4212d46726b0864569eacbab3ac1c41823d1614",
+      "realtimeContractSha256": "b2ea5e5bcd146bb952d48aedee92303821daefa967521279acf34d30f56c98e0",
+      "fingerprintSha256": "0881177a33e029fb78986ffde7c0b780220f398e4182bdc487d48b59438e6999",
+      "atomicRunnerExact": true
+    },
+    "prefix17": {
+      "firebasePrivateTableCount": 22,
+      "rawSha256": "7dad4a8eab9eda457a2804bc509f0f187cb43a38a55fe4a629c128cc53d0f96b",
+      "canonicalAppSha256": "7803c16aa2182ba4e31a4a3a66d33d4e079971d1deb75b2646c4a782c3ee3625",
+      "realtimeContractSha256": "b2ea5e5bcd146bb952d48aedee92303821daefa967521279acf34d30f56c98e0",
+      "fingerprintSha256": "1744817979a1da26221033c000869bab4910091b8c812507b648c13842f7cc1a"
+    },
+    "ready": {
+      "firebasePrivateTableCount": 23,
+      "rawSha256": "5eba53b54281acec664b0612060779782b1b6ed3163a0842a3bc1fd0a4deea09",
+      "canonicalAppSha256": "2d93361d79f9e25b9d15e705d7bdb4eec7b87e8716097d4aed6bc72ce0a724eb",
+      "realtimeContractSha256": "b2ea5e5bcd146bb952d48aedee92303821daefa967521279acf34d30f56c98e0",
+      "fingerprintSha256": "5de138237acf50177a7d0e656a2eda7e15a33a73a5a02a823b33b1a29581d117"
+    },
+    "final": {
+      "firebasePrivateTableCount": 25,
+      "rawSha256": "7a838ffbe8deb1cba227721d983f535db4d710ce823791f0f18f602e221163af",
+      "canonicalAppSha256": "d7483cd1196609bef0c38816ea0cba023244dddfee20c4b7e027c520794ca91c",
+      "realtimeContractSha256": "b2ea5e5bcd146bb952d48aedee92303821daefa967521279acf34d30f56c98e0",
+      "fingerprintSha256": "6425dcd8ebeafdeb0890d34780355fe20de6903da891e34af3d19d635da28948"
+    }
+  },
+  "realtimeContract": {
+    "singleStatementSnapshot": true,
+    "componentHashes": {
+      "parent": "9a4f61ccd00f4758f4257c951e6121fe0ac8e1cf0627692931732aa9dc1c7f32",
+      "routines": "c2b4b0d87af7a63e9e3a01bb20e786f462bfb86aaaf7b850ebfd45b6b90b5a9f",
+      "children": "182957c312fa1c3c91fd3cf7f8ffbb6e8ec689bf566ccb14dace782c1b42b417",
+      "basePolicies": "e6d862ae1566631f202af2f7c61377ae90b965847a034186f4b70977576e9e40",
+      "postPhasePolicies": "29c6cf07919a178f45b7d8bca96e56c02a3c8cfb4aa188c49eedb2cb5e3408e9"
+    },
+    "transition": {
+      "baseSha256": "620204f57bdd524630b7f72c7e6d68a34113a4deb01c8d799e33315c98afb18e",
+      "readySha256": "b2ea5e5bcd146bb952d48aedee92303821daefa967521279acf34d30f56c98e0",
+      "finalSha256": "b2ea5e5bcd146bb952d48aedee92303821daefa967521279acf34d30f56c98e0",
+      "changedFields": [
+        {
+          "path": "sidey_room_channels_insert.withCheck",
+          "beforeSha256": "7da771b03dabe4130f5e6c641f46298ed0d510cfd0afba0a07fa84bfd42641a1",
+          "afterSha256": "9c689be8bef9e39640654882ce283601b4031faf98a40c91e22914021e076355"
+        },
+        {
+          "path": "sidey_room_channels_select.qual",
+          "beforeSha256": "afed3874086e59a260820627653b099f683a929acfcd22edbb90338c8d0fc2dd",
+          "afterSha256": "9c3a118c60dfbdc97131055519da8ad8f1d8d165b8c24877558159c37a87db42"
+        }
+      ]
+    },
+    "partitionInventory": {
+      "snapshotUtcDate": "2026-09-22",
+      "names": [
+        "messages_2026_09_19",
+        "messages_2026_09_20",
+        "messages_2026_09_21",
+        "messages_2026_09_22",
+        "messages_2026_09_23",
+        "messages_2026_09_24",
+        "messages_2026_09_25"
+      ],
+      "postgresAclModes": [
+        {"name": "messages_2026_09_19", "mode": "legacy"},
+        {"name": "messages_2026_09_20", "mode": "legacy"},
+        {"name": "messages_2026_09_21", "mode": "legacy"},
+        {"name": "messages_2026_09_22", "mode": "legacy"},
+        {"name": "messages_2026_09_23", "mode": "legacy"},
+        {"name": "messages_2026_09_24", "mode": "legacy"},
+        {"name": "messages_2026_09_25", "mode": "modern"}
+      ],
+      "count": 7,
+      "continuous": true,
+      "coversUtcTodayAndTomorrow": true
+    }
+  },
+  "migrationReplay": {
+    "productionPhaseCount": 26,
+    "historicalRepairSqlReplayed": false,
+    "compatibilityCandidateCount": 5
+  }
+}
