@@ -1,15 +1,16 @@
 # Firebase v2 운영 구조
 
-상태: **Gate 1 PASS / Supabase production M0 final safety review 대기**
-기준일: 2026-09-22
+상태: **production M0 배포됨 / transient bridge source candidate 검증 완료·미배포**
+기준일: 2026-09-23
 
 ## 역할 분리
 
 1. Supabase transaction이 room, membership, profile, commerce, message 원본을 갱신한다.
 2. 같은 transaction이 private schema의 durable outbox를 기록한다.
 3. Edge/Functions worker가 bounded claim, exact ACK, retry와 tombstone fence를 적용한다.
-4. 호환 기간의 Firebase RTDB는 server-only chat event와 access/room/chat hint만 전달한다.
-5. 클라이언트는 Supabase에서 원본을 재조회하며 RTDB를 source of truth로 사용하지 않는다.
+4. 새 client의 typing/pulse/throw는 Firebase compact t/c/x를 사용하고, server bridge가 old Supabase client와
+   혼재 기간 양방향 호환을 제공한다. Presence는 Supabase에 남는다.
+5. 클라이언트는 durable 데이터는 Supabase에서 재조회하며 RTDB transient를 source of truth로 사용하지 않는다.
 
 ## 복구 baseline과 현재 구성
 
@@ -22,7 +23,8 @@
   `20260921110000_firebase_wire_code_contract.sql`,
   `20260921132018_firebase_mixed_version_supabase_bridge.sql`,
   `20260921133000_firebase_client_rollout_selector.sql`,
-  `20260921133500_legacy_send_message_response_contract.sql`은 5개 local candidate다.
+  `20260921133500_legacy_send_message_response_contract.sql`까지 production에 배포됐다. 새 forward migration
+  `20260922192118_firebase_transient_bridge.sql`은 source candidate다.
 - Supabase Edge Functions 5개: `realtime-bootstrap`, `realtime-publish`, `realtime-publish-live`, `realtime-event`, `realtime-wake`
 - Firebase unit/Rules tests, pgTAP, Edge protocol/load harness, DB concurrency tests
 
@@ -34,8 +36,8 @@
 | --- | --- |
 | Firebase `sidey-realtime` | Gate 1 Rules와 Functions 9개 ACTIVE, 배포 후 read-back 완료 |
 | Supabase staging `fjglrvhvdthntkvrduyi` | Firebase migration 21개와 Edge Functions 5개 배포됨 |
-| Supabase production `whtejsviizgejauasqqt` | Firebase migration/object/Edge Function 없음 |
-| local production candidate | compatibility migration 5개와 변경된 bootstrap 계약, 아직 remote 미배포 |
+| Supabase production `whtejsviizgejauasqqt` | M0 migration through `20260921142300`; selector OFF read-back |
+| local production candidate | transient bridge migration `20260922192118`, Functions 5개 추가, t/c/x Rules; 미배포 |
 | current released client | legacy Supabase 계약 사용. v2-capable release 없음 |
 
 ## 안전 불변식
@@ -62,7 +64,7 @@
 - account 비활성화 시 bootstrap limiter cleanup 추가
 - staging smoke가 exact outbox ACK를 확인하고 삭제된 test-owned queue tombstone을 transactionally 제거할 service-role 전용 forward migration 추가
 
-## M0 local candidate에서 해결한 항목
+## production M0에서 해결한 항목
 
 - staging URL이 박힌 live publisher를 제거하고 환경별 `publisher_url` 미설정 시 fail-closed
 - mixed legacy/Firebase room의 session revoke 때 legacy `structure_changed` Broadcast를 유지
@@ -70,19 +72,29 @@
   `accessRevision` barrier 추가
 - `current_firebase_access_revision` post-commit fallback과 `get_store_state_v2.wireCode` 추가
 - `bootstrapRealtime.minimumAccessRevision` 수렴 장벽과 응답의 `accessRevision`, `wireItems` 추가
-- Firebase-live room에서도 durable/structure invalidation과 typing/pulse/throw를 Supabase private Broadcast로
-  계속 전달하는 강제 호환 계약 추가. 혼합 기간의 transient는 old/new 모두
-  기존 authenticated Supabase RPC/Broadcast plane만 사용한다. compact `/v2/l/{room}/t|c|x` client write는
-  Rules에서 거부하고 수신도 무시하며, staging-only `/v2/rooms/.../events` outbox는 compact 계약으로 취급하지
-  않는다.
+- Firebase-live room에서도 durable/structure invalidation과 기존 Supabase private Broadcast를 유지하는
+  호환 기반을 production에 배포했다.
+
+## transient bridge source candidate에서 해결한 항목
+
+- 새 client는 typing/pulse/throw를 Firebase compact t/c/x에 한 번만 발행·수신하고, old client는 기존
+  Supabase RPC/Broadcast를 유지한다.
+- Firebase→Supabase는 RTDB trigger + service RPC, Supabase→Firebase는 transaction outbox + bounded worker로
+  연결한다. CloudEvent-derived UUID/source UUID dedupe, Admin trigger skip, monotonic timestamp transaction으로
+  retry와 mirror loop를 막는다.
+- current session, membership, target membership, throwable wire entitlement, shared rate ledger를 server에서
+  다시 검증한다. initial snapshot은 baseline이며 5초가 지난 animation은 억제한다.
+- `configure_firebase_transient_bridge_v2`가 양방향 transient bridge만 runtime disable한다. Presence는 계속
+  Supabase private Realtime이다. 날짜 기반 자동 cutoff는 없다.
+- candidate fixture hash는
+  `0f2845d033df248b1745c6526c8c7100b8d8fa6839b45f28c73b1023053fce2e`이며 아직 remote read-back 값이 아니다.
 
 ## 남은 차단 사항
 
-- compatibility migration과 변경된 bootstrap Functions는 staging/production에 아직 미배포다.
-- production M0용 fresh local atomic-runner rehearsal, object diff, bounded backfill, concurrent-index watchdog,
-  ready/final schema hash와 legacy HTTP smoke는 PASS했다. production mutation과 remote read-back은 아직 없다.
-- production active Supabase session 7,018건은 모두 `not_after`가 없어 장기 session 호환·revocation을
-  production-shaped rehearsal에서 다시 검증해야 한다.
+- transient bridge migration/Functions/Rules는 staging/production에 아직 미배포다. deployed function inventory는
+  9개이고 candidate 예상 inventory는 14개다.
+- production old rollout은 2026-09-23 Firebase gate false → Supabase selector OFF 순서로 read-back됐다.
+  migration의 fail-closed OFF precondition을 유지한 상태에서만 배포할 수 있다.
 - Windows raw REST/SSE/307 fixture는 local PASS지만 실제 Windows client 연결 검증은 아직 없다.
 - 10명 staging smoke와 cleanup은 PASS했다. 3,000 연결 600초 시험은 사용자 결정에 따라 M0 기능/호환
   gate에서 제외했다. 과거 2,400 연결 시험 실패는 성능 참고 기록으로만 유지한다.
@@ -91,5 +103,5 @@
   강제 증거와 old↔new chat/typing/pulse/throw/Presence matrix PASS 전에는 bridge 제거 forward migration을
   만들 수 없다.
 
-Gate 1의 `FIREBASE_READY` 판정은 유지된다. 그러나 위 M0 차단 항목을 해결하기 전에는 Supabase
-production migration을 적용하거나 최종 `CLIENT_BACKEND_HANDOFF.md`를 발행하지 않는다.
+배포 순서는 old gate/selector OFF 유지 → forward migration → Functions/Rules → 새 hash/function/rules/wake
+exact read-back → selector ON → Firebase gate true다. source candidate와 deployed 상태를 섞어 기록하지 않는다.

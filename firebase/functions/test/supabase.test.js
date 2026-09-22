@@ -143,7 +143,7 @@ test("requires a current server-selected rollout lease before bootstrap", async 
         allowed: true,
         leaseExpiresAt: now + 300_000,
         protocolVersion: 2,
-        contractHash: "3c836b40cfc44437e9d069b84787cd3d8793026ce40de46d82b9ece79127b7e5",
+        contractHash: "0f2845d033df248b1745c6526c8c7100b8d8fa6839b45f28c73b1023053fce2e",
       }), {status: 200, headers: {"content-type": "application/json"}});
     }, now,
   );
@@ -160,7 +160,7 @@ test("requires a current server-selected rollout lease before bootstrap", async 
     {allowed: true, leaseExpiresAt: now + 300_001, protocolVersion: 2,
       contractHash: "bad"},
     {allowed: true, leaseExpiresAt: now - 1, protocolVersion: 2,
-      contractHash: "3c836b40cfc44437e9d069b84787cd3d8793026ce40de46d82b9ece79127b7e5"},
+      contractHash: "0f2845d033df248b1745c6526c8c7100b8d8fa6839b45f28c73b1023053fce2e"},
   ]) {
     await assert.rejects(getRealtimeBootstrapAuthorization(
       config, command.senderId, sessionId,

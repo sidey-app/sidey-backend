@@ -372,7 +372,7 @@ try {
       p_platform: "macos",
       p_app_version: "2.0.0-smoke",
       p_protocol_version: 2,
-      p_contract_hash: "3c836b40cfc44437e9d069b84787cd3d8793026ce40de46d82b9ece79127b7e5",
+      p_contract_hash: "0f2845d033df248b1745c6526c8c7100b8d8fa6839b45f28c73b1023053fce2e",
     },
   )));
   if (selectorResults.some((result) => result?.enabled !== true ||

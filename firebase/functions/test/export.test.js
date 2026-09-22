@@ -5,7 +5,8 @@ const assert = require("node:assert/strict");
 const {bootstrapRealtime, syncRealtimeAccess,
   retryRealtimeAccess, reconcileRealtimeAccess, syncRealtimeRoomRevisions,
   retryRealtimeRoomRevisions, sendRealtimeChat, syncRealtimeChat,
-  retryRealtimeChat} = require("../index");
+  retryRealtimeChat, syncRealtimeTransients, retryRealtimeTransients,
+  bridgeRealtimeTyping, bridgeRealtimePulse, bridgeRealtimeThrow} = require("../index");
 
 test("does not export the removed legacy RTDB chat trigger", () => {
   assert.equal(require("../index").persistChatCommand, undefined);
@@ -43,4 +44,17 @@ test("chat callable and durable publisher are bounded independently", () => {
   assert.equal(syncRealtimeChat.__endpoint.concurrency, 1);
   assert.equal(syncRealtimeChat.__endpoint.timeoutSeconds, 60);
   assert.equal(retryRealtimeChat.__endpoint.scheduleTrigger.schedule, "every 1 minutes");
+});
+
+test("transient bridge exports bounded durable workers and three RTDB triggers", () => {
+  assert.equal(syncRealtimeTransients.__endpoint.maxInstances, 1);
+  assert.equal(syncRealtimeTransients.__endpoint.concurrency, 1);
+  assert.equal(syncRealtimeTransients.__endpoint.timeoutSeconds, 60);
+  assert.equal(retryRealtimeTransients.__endpoint.scheduleTrigger.schedule, "every 1 minutes");
+  for (const trigger of [bridgeRealtimeTyping, bridgeRealtimePulse, bridgeRealtimeThrow]) {
+    assert.equal(trigger.__endpoint.platform, "gcfv2");
+    assert.equal(trigger.__endpoint.maxInstances, 20);
+    assert.equal(trigger.__endpoint.concurrency, 20);
+    assert.equal(trigger.__endpoint.eventTrigger.retry, true);
+  }
 });

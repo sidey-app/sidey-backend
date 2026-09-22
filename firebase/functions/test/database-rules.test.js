@@ -66,30 +66,28 @@ test.beforeEach(async () => {
   });
 });
 
-test("compatibility mode denies every client typing slot write", async () => {
+test("Firebase-selected sessions own only their exact typing slot", async () => {
   const dbA = client(memberId, sessionA);
   const dbB = client(memberId, sessionB);
   const aPath = `v2/l/${roomId}/t/${memberId}/${sessionA}`;
   const bPath = `v2/l/${roomId}/t/${memberId}/${sessionB}`;
 
-  await assertFails(set(ref(dbA, aPath), Date.now()));
-  await assertFails(set(ref(dbB, bPath), Date.now()));
+  await assertSucceeds(set(ref(dbA, aPath), Date.now()));
+  await assertSucceeds(set(ref(dbB, bPath), Date.now()));
   await assertFails(set(ref(dbA, bPath), Date.now()));
   await assertFails(set(ref(dbA, `v2/l/${roomId}/t/${memberId}/arbitrary-slot`), Date.now()));
-  await adminSet(aPath, Date.now());
-  await adminSet(bPath, Date.now());
-  await assertFails(remove(ref(dbA, aPath)));
-  await assertFails(remove(ref(dbB, bPath)));
+  await assertSucceeds(remove(ref(dbA, aPath)));
+  await assertSucceeds(remove(ref(dbB, bPath)));
 });
 
-test("compatibility mode denies member pulse and throw writes", async () => {
+test("members write bounded pulse and entitled compact throw slots", async () => {
   const db = client(memberId);
-  await assertFails(set(ref(db, `v2/l/${roomId}/c/${memberId}`), Date.now()));
+  await assertSucceeds(set(ref(db, `v2/l/${roomId}/c/${memberId}`), Date.now()));
   const throwPath = `v2/l/${roomId}/x/${memberId}`;
   const first = Date.now() - 600;
-  await assertFails(set(ref(db, throwPath), {u: targetId, k: "7", t: first}));
+  await assertSucceeds(set(ref(db, throwPath), {u: targetId, k: "7", t: first}));
   await assertFails(set(ref(db, throwPath), {u: targetId, k: "7", t: first + 499}));
-  await assertFails(set(ref(db, throwPath), {u: targetId, k: "7", t: first + 500}));
+  await assertSucceeds(set(ref(db, throwPath), {u: targetId, k: "7", t: first + 500}));
   await assertFails(set(ref(db, throwPath), {u: memberId, k: "7", t: Date.now()}));
   await assertFails(set(ref(db, throwPath), {u: outsiderId, k: "7", t: Date.now()}));
   await assertFails(set(ref(db, throwPath), {u: targetId, k: "8", t: Date.now()}));
@@ -191,14 +189,16 @@ test("emergency global kill immediately revokes existing listeners", async () =>
   }
 });
 
-test("only server administration can create or clean compatibility transient slots", async () => {
+test("a client can clean only its exact typing slot after session revocation", async () => {
   const dbA = client(memberId, sessionA);
   const typingPath = `v2/l/${roomId}/t/${memberId}/${sessionA}`;
   await adminSet(typingPath, Date.now());
-  await assertFails(remove(ref(dbA, typingPath)));
+  await assertSucceeds(remove(ref(dbA, typingPath)));
+  await adminSet(typingPath, Date.now());
   await adminSet(`v2/a/u/${memberId}/sessions/${sessionA}`, null);
   await assertFails(set(ref(dbA, typingPath), Date.now() + 1_500));
-  await assertFails(remove(ref(dbA, typingPath)));
+  await assertSucceeds(remove(ref(dbA, typingPath)));
+  await adminSet(typingPath, Date.now());
   await assertFails(remove(ref(client(memberId, sessionB), typingPath)));
 });
 
@@ -206,7 +206,7 @@ test("revoking session A leaves session B usable; account suspension revokes bot
   await adminSet(`v2/a/u/${memberId}/sessions/${sessionA}`, null);
   await assertFails(get(ref(client(memberId, sessionA), `v2/n/${memberId}`)));
   await assertSucceeds(get(ref(client(memberId, sessionB), `v2/n/${memberId}`)));
-  await assertFails(set(ref(client(memberId, sessionB), `v2/l/${roomId}/c/${memberId}`), Date.now()));
+  await assertSucceeds(set(ref(client(memberId, sessionB), `v2/l/${roomId}/c/${memberId}`), Date.now()));
   await adminSet(`v2/a/u/${memberId}/active`, false);
   await assertFails(get(ref(client(memberId, sessionB), `v2/n/${memberId}`)));
   await assertFails(set(ref(client(memberId, sessionB), `v2/l/${roomId}/c/${memberId}`), Date.now()));

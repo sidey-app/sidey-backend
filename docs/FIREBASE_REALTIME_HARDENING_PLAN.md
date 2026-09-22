@@ -1,6 +1,6 @@
 # Firebase Realtime hardening plan
 
-상태: **Gate 1 PASS — Supabase production M0 차단 중**
+상태: **Gate 1/M0 완료 — transient bridge source candidate 미배포**
 
 ## P0 — 배포 차단
 
@@ -27,6 +27,9 @@
 - account suspension, A/B session, tombstone/late worker 회귀 테스트를 추가한다. **local 완료**
 - Windows REST/SSE/redirect 회귀 테스트는 **local 완료**다.
 - 10명 smoke 후 임시 Auth/Firebase/Supabase 잔여 데이터 0을 확인한다. **완료**
+- 새 client의 t/c/x와 old Supabase client를 server bridge로 양방향 연결한다. CloudEvent/source event UUID
+  dedupe, Admin loop skip, current session/membership/entitlement/rate 재검증, 5초 freshness를 적용한다.
+  **local Functions/Rules/pgTAP 완료 / remote 미배포**
 
 ## P2 — 운영 위생
 
@@ -43,13 +46,11 @@
 - 3,000 연결 실제 행동 부하 600초 완료 및 사전에 정한 성능/적체 기준 PASS
 - 배포 대상, Rules hash, function revision, rollback 명령을 `FIREBASE_READY_HANDOFF.md`에 기록
 
-## M0 전 차단 조건
+## transient bridge 배포 전 차단 조건
 
-- local 22번째 compatibility migration을 production-shaped snapshot에서 rehearsal하고 기존 client 계약을
-  다시 실행한다.
-- 변경된 `bootstrapRealtime` grant barrier를 staging에 배포·read-back하고 v2 smoke를 반복한다.
-- migration SQL, object diff, `messages` backfill/index와 trigger 설치의 lock/예상 시간을 측정한다.
-- 3,000 연결, 600초 실제 행동 부하를 PASS해야 한다. 2,400 연결 시험은 39.735초에 oldest backlog가
-  15초 상한을 넘어 실패했으므로 대체 증거가 아니다.
-- 위 조건과 명시적 production 승인 전에는 M0를 적용하지 않는다. 최종
-  `CLIENT_BACKEND_HANDOFF.md`는 M0 적용 및 remote read-back 뒤에만 발행한다.
+- old Firebase gate false와 Supabase selector OFF를 exact read-back한 상태에서만 forward migration을 적용한다.
+- migration `20260922192118`, Functions 예상 14개와 새 Rules를 배포한 뒤 새 contract hash, function inventory,
+  Rules와 wake URL을 exact read-back한다.
+- selector ON 뒤 Firebase gate true 순서를 지키고, old↔new chat/typing/pulse/throw/Presence matrix를 확인한다.
+- 7일은 최소 관찰 기간이며 날짜만으로 bridge를 끄지 않는다. capability/최소 지원 버전 증거가 있어야 별도
+  forward migration으로 legacy transient bridge를 제거할 수 있다.

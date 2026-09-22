@@ -32,6 +32,11 @@ test("machine-readable contract matches the targeted Firebase deployment config"
 test("machine-readable endpoints exist and legacy chat trigger stays absent", () => {
   assert.ok(functions[contract.bootstrap.function].__endpoint);
   assert.ok(functions[contract.chat.function].__endpoint.callableTrigger);
+  assert.ok(functions.syncRealtimeTransients.__endpoint);
+  assert.ok(functions.retryRealtimeTransients.__endpoint.scheduleTrigger);
+  assert.ok(functions.bridgeRealtimeTyping.__endpoint.eventTrigger);
+  assert.ok(functions.bridgeRealtimePulse.__endpoint.eventTrigger);
+  assert.ok(functions.bridgeRealtimeThrow.__endpoint.eventTrigger);
   assert.equal(functions.persistChatCommand, undefined);
   assert.equal(contract.paths.accessRoot, "/v2/a");
   assert.equal(contract.paths.typing.endsWith("/{sideySessionId}"), true);
@@ -47,13 +52,13 @@ test("machine-readable endpoints exist and legacy chat trigger stays absent", ()
 
 test("production candidate freezes bootstrap, grant, hint and receiver semantics", () => {
   assert.deepEqual(contract.status, {
-    firebaseGate1: "deployed-and-verified",
+    firebaseGate1: "deployed-old-contract-requires-fail-closed-rollout-disable-before-upgrade",
     supabaseStaging: "validated-through-20260921070944",
-    supabaseProduction: "not-migrated",
-    compatibilityMigration: "local-candidate-20260921102516",
-    wireCodeMigration: "local-candidate-20260921110000",
-    compatibilityBridgeMigration: "local-candidate-20260921132018",
-    clientRelease: "not-ready",
+    supabaseProduction: "deployed-through-20260921142300",
+    compatibilityMigration: "deployed-20260921102516",
+    wireCodeMigration: "deployed-20260921110000",
+    compatibilityBridgeMigration: "source-candidate-20260922192118",
+    clientRelease: "new-contract-not-released",
   });
   assert.equal(contract.bootstrap.request.minimumAccessRevision, "20-digit-decimal-string");
   assert.deepEqual(contract.bootstrap.errors[409], [
@@ -87,18 +92,26 @@ test("production candidate freezes bootstrap, grant, hint and receiver semantics
   assert.equal(contract.chat.ambiguousRetry.startsWith("never-auto-resend"), true);
   assert.equal(contract.chat.errorMap.realtime_rollout_disabled, "failed-precondition");
   assert.equal(contract.paths.globalEmergencyGate, "/v2/a/g/e");
+  assert.equal(contract.transientReceiver.primaryTransport, "firebase-rtdb-compact-t-c-x");
   assert.equal(
     contract.transientReceiver.compatibilityTransport,
-    "supabase-private-broadcast-only",
+    "temporary-bidirectional-server-bridge-to-supabase-private-broadcast",
   );
-  assert.equal(contract.transientReceiver.compactFirebasePaths, "reserved-receive-ignored");
-  assert.equal(contract.transientReceiver.compactFirebaseClientWrites, false);
-  assert.equal(contract.transientReceiver.futureTransitionContract.status, "reserved-not-active");
   assert.equal(
-    contract.transientReceiver.futureTransitionContract.initialSnapshot,
+    contract.transientReceiver.compactFirebasePaths,
+    "active-when-session-selected-and-global-gate-enabled",
+  );
+  assert.equal(contract.transientReceiver.compactFirebaseClientWrites, true);
+  assert.equal(contract.transientReceiver.transitionContract.status,
+    "source-candidate-not-deployed");
+  assert.equal(
+    contract.transientReceiver.transitionContract.initialSnapshot,
     "baseline-only-no-animation",
   );
-  assert.equal(contract.transientReceiver.futureTransitionContract.receiverFreshnessMs, 5000);
+  assert.equal(contract.transientReceiver.transitionContract.receiverFreshnessMs, 5000);
+  assert.equal(contract.transientReceiver.legacyBridge.runtimeDisableRpc,
+    "configure_firebase_transient_bridge_v2");
+  assert.equal(contract.transientReceiver.legacyBridge.automaticCutoff, false);
   assert.equal(contract.payloads.throw.k, "decimal-wire-code-string");
   assert.equal(contract.hints.revisionComparison, "fixed-width-20-digit-lexical");
   assert.equal(
@@ -116,6 +129,6 @@ test("production candidate freezes bootstrap, grant, hint and receiver semantics
   assert.match(contract.wireCodes.catalogSha256, /^[0-9a-f]{64}$/);
   assert.equal(
     contract.wireCodes.productionMapping,
-    "candidate-pinned-pending-M0-read-back",
+    "deployed-and-read-back",
   );
 });

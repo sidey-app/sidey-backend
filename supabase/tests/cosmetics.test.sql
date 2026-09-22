@@ -39,6 +39,9 @@ insert into auth.users (
    'authenticated', 'authenticated', '{"provider":"google","providers":["google"]}', '{}', false, now(), now()),
   ('71000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', '{"provider":"google","providers":["google"]}', '{}', false, now(), now());
+insert into auth.sessions(id, user_id, created_at, updated_at) values
+  ('73000000-0000-4000-8000-000000000001', '71000000-0000-0000-0000-000000000001', now(), now()),
+  ('73000000-0000-4000-8000-000000000002', '71000000-0000-0000-0000-000000000002', now(), now());
 
 select set_config('request.jwt.claim.sub', '71000000-0000-0000-0000-000000000001', true);
 select public.upsert_profile('꾸미는친구', 'pixel_hamster');
@@ -52,6 +55,8 @@ select * from public.join_room((select invite_code from cosmetics_room));
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '71000000-0000-0000-0000-000000000001', true);
+select set_config('request.jwt.claims',
+  '{"sub":"71000000-0000-0000-0000-000000000001","session_id":"73000000-0000-4000-8000-000000000001"}', true);
 select is((select count(*)::integer from public.get_store_state()), 33, 'store state returns the whole catalog');
 select is(
   (select count(*)::integer from public.get_store_state() where is_equipped is null),

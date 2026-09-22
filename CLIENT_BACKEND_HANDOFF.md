@@ -1,12 +1,13 @@
 # Client/backend production handoff
 
-상태: **BACKEND PUBLISHED — rollout OFF, client T0 미시작**
-기준일: 2026-09-22
+상태: **TRANSIENT BRIDGE SOURCE CANDIDATE — production rollout OFF, 미배포**
+기준일: 2026-09-23
 
-이 문서는 Firebase v2가 포함된 native client의 production backend 계약이다. Supabase M0와 Firebase
-Functions/Rules publication은 끝났지만, client selector와 Firebase global gate는 의도적으로 OFF다. 따라서
-현재 설치된 client와 새 client 모두 `legacy_supabase`를 사용한다. App Store 업로드·심사·배포와 rollout ON은
-이 handoff 범위가 아니며 각각 별도 승인 작업이다.
+이 문서는 Firebase v2가 포함된 native client의 production backend 계약과 다음 배포 후보를 분리해 기록한다.
+기존 Supabase M0와 Firebase Functions 9개는 배포돼 있지만, typing/pulse/throw 양방향 호환 bridge migration,
+Functions 5개 추가분과 새 Rules는 **source candidate일 뿐 아직 production에 배포되지 않았다**. 운영은
+2026-09-23 old contract가 잠시 100% ON이었던 것을 확인한 뒤 Firebase gate false read-back → Supabase selector
+OFF read-back 순서로 다시 차단했다. App Store 업로드·심사·배포와 rollout ON은 이 handoff 범위가 아니다.
 
 ## production 상태
 
@@ -15,7 +16,8 @@ Functions/Rules publication은 끝났지만, client selector와 Firebase global 
 | Supabase project | `whtejsviizgejauasqqt` |
 | migration history | `93`; first `20260829000000`, last `20260921142300` |
 | final schema | private table `25`; canonical app+Realtime SHA-256 `6425dcd8ebeafdeb0890d34780355fe20de6903da891e34af3d19d635da28948` |
-| contract | protocol `2`; `firebase/contract-v2.fixture.json` SHA-256 `3c836b40cfc44437e9d069b84787cd3d8793026ce40de46d82b9ece79127b7e5` |
+| deployed contract | protocol `2`; selector hash `3c836b40cfc44437e9d069b84787cd3d8793026ce40de46d82b9ece79127b7e5` |
+| source candidate | `firebase/contract-v2.fixture.json` SHA-256 `0f2845d033df248b1745c6526c8c7100b8d8fa6839b45f28c73b1023053fce2e`; migration `20260922192118` |
 | Firebase project / RTDB | `sidey-realtime` / regional `sidey` |
 | database URL / region | `https://sidey.asia-southeast1.firebasedatabase.app` / `asia-southeast1` |
 | App Store Firebase app | `1:985965733256:ios:62d9e218a8171e54b4063d`; bundle `app.sidey.desktop.appstore` |
@@ -60,6 +62,10 @@ register_realtime_capability_v2(
 }
 ```
 
+위 JSON은 현재 deployed old contract read-back이다. candidate migration 적용 뒤에는 contract hash가
+`0f2845d033df248b1745c6526c8c7100b8d8fa6839b45f28c73b1023053fce2e`로 바뀌어야 하며, 그 전후 값을
+섞어서 capability를 등록하면 안 된다.
+
 RPC는 `authenticated`만 실행 가능하며 `auth.sessions.session_id`가 현재 user/session과 일치하는지 확인한 뒤
 capability와 `last_seen_at`을 기록한다. row는 session revoke/delete에 cascade된다. 메시지 본문이나 다른
 개인정보는 기록하지 않는다.
@@ -85,9 +91,17 @@ capability와 `last_seen_at`을 기록한다. row는 session revoke/delete에 ca
 listener는 active room `/v2/l/{roomId}` 한 개와 user inbox `/v2/n/{uid}` 한 개다. access/room revision은
 20자리 decimal string이며 lexical compare한다. permission denial은 fail-closed다.
 
-Presence와 typing/pulse/throw는 mixed-version 기간에 기존 Supabase private Realtime plane을 계속 쓴다.
-compact `/v2/l/{room}/t|c|x` client write는 Rules가 거부하고 client도 발행·소비하지 않는다. Firebase v2는
-server-owned chat event와 access/room/chat hint를 담당한다. Postgres가 durable message source of truth다.
+Presence는 계속 Supabase private Realtime만 쓴다. 새 v2 client의 typing/pulse/throw는 Firebase compact
+`/v2/l/{room}/t|c|x`에 **한 번만 발행하고 Firebase에서 수신**한다. 구버전 client는 기존 authenticated
+Supabase RPC/private Broadcast를 유지한다. 혼재 기간의 서버 bridge가 Firebase→Supabase와
+Supabase→Firebase를 각각 한 번 전달하므로 old↔new 양방향 통신이 된다. Firebase-origin Admin mirror는
+RTDB trigger에서 제외하고, CloudEvent 기반 UUID dedupe와 durable outbox/high-water transaction으로 retry와
+loop를 막는다. receiver는 initial snapshot을 baseline으로만 쓰고 5초가 지난 animation은 재생하지 않는다.
+Postgres는 durable message source of truth이며 t/c/x는 일시 이벤트일 뿐 history가 아니다.
+
+이 계약은 source candidate다. 현재 production Rules에서는 t/c/x를 사용하지 않으며, migration/Functions/Rules
+배포 및 새 hash read-back 전에는 새 client selector를 ON으로 바꾸면 안 된다. bridge runtime switch
+`configure_firebase_transient_bridge_v2`는 양방향 transient bridge만 끄며 Presence에는 영향을 주지 않는다.
 
 chat의 deadline/internal/unavailable/transport 오류는 commit-ambiguous다. 동일 UUID를 자동 재전송하지 말고
 Supabase 3일 history에서 client message UUID를 조정한다.
@@ -132,6 +146,18 @@ RTDB Rules source raw SHA-256은
 `145ab22b402de1445759c858a6fa3ab4bd6f3cb9599a7108ed53c8b3cd94f406`이며 source와 remote가 exact
 canonical match다. disabled default RTDB는 source에서 참조하지 않는다.
 
+## source candidate expected inventory
+
+배포 전 예상 inventory는 기존 9개에 아래 5개를 더한 **14개**다. revision/generation/hash는 배포 후 read-back
+전에는 알 수 없으므로 추정값을 적지 않는다.
+
+- `syncRealtimeTransients`, `retryRealtimeTransients`
+- `bridgeRealtimeTyping`, `bridgeRealtimePulse`, `bridgeRealtimeThrow`
+
+새 Rules는 선택된 current session의 자기 t/c/x slot만 쓰게 하고, room membership, target membership,
+throwable wire entitlement, gate/lease/access health와 1500/1000/500ms cooldown을 모두 확인한다. source
+candidate와 deployed read-back을 혼동하지 않는다.
+
 ## verification evidence
 
 | 검증 | 결과 |
@@ -148,6 +174,9 @@ canonical match다. disabled default RTDB는 source에서 참조하지 않는다
 | production authenticated OFF smoke | PASS; user 1, room 1, message 1; selector OFF, bootstrap `409`, legacy scalar object |
 | production smoke cleanup | PASS; Supabase Auth/source/outbox, Firebase Auth/RTDB test scope residual `0` |
 | 3,000 × 600s load | 사용자 결정으로 NOT RUN; 기능/호환 gate에 포함하지 않음 |
+| transient bridge Functions unit/contract | PASS `87/87` 전체 suite |
+| transient bridge Rules emulator | PASS `12/12` |
+| transient bridge isolated pgTAP | PASS `37/37`; migration 전체 적용 뒤 전용 test |
 
 production smoke cleanup은 기존 room-revision backlog 뒤에 test tombstone이 있어 최초 240초 deadline을 넘겼다.
 global worker를 추가로 반복 호출하지 않고 정상 scheduler delivery를 기다린 뒤 exact test scope만 finalize했다.
@@ -161,7 +190,12 @@ read-back** 순서이며 `firebase/functions/scripts/configure-rollout.js`만 �
 다르면 mutation 전에 중단한다. 어떤 경우에도 historical migration을 replay하거나 applied migration을 수정하지
 않는다.
 
-현재 이미 OFF이므로 rollback을 실행할 것은 없다. T0는 reviewed client가 production에 배포된 뒤 별도 승인으로
+현재 이미 OFF이므로 candidate 배포 순서는 고정한다: **old gate/selector OFF exact read-back 유지 → forward
+migration `20260922192118` → Functions 14개와 Rules 배포 → migration/hash/function/rules/wake read-back → 새
+contract capability 등록 → selector ON read-back → Firebase gate true read-back**. 중간 단계가 하나라도 실패하면
+OFF를 유지한다. historical migration을 수정하거나 재실행하지 않는다.
+
+T0는 reviewed client가 production에 배포된 뒤 별도 승인으로
 cohort를 1 이상 설정하고 global gate true를 exact read-back한 시각이다. 7일은 그 뒤의 최소 관찰 기간이지
 자동 legacy cutoff가 아니다. active capability 또는 최소 버전 강제 증거와 old↔new
 chat/typing/pulse/throw/Presence matrix PASS 전에는 legacy bridge 제거 migration을 만들지 않는다.
