@@ -9,24 +9,24 @@
       },
       "l": {
         "$roomId": {
-          ".read": "auth != null && root.child('v2/a/s/v').val() > now && auth.token.sideySessionId != null && root.child('v2/a/u').child(auth.uid).child('active').val() === true && root.child('v2/a/u').child(auth.uid).child('sessions').child(auth.token.sideySessionId).val() > now && root.child('v2/a/u').child(auth.uid).child('rooms').child($roomId).val() === true && !root.child('v2/a/d').child($roomId).exists()",
+          ".read": "auth != null && root.child('v2/a/g/e').val() === true && auth.token.sideyRolloutUntil != null && auth.token.sideyRolloutUntil > now && root.child('v2/a/s/v').val() > now && auth.token.sideySessionId != null && root.child('v2/a/u').child(auth.uid).child('active').val() === true && root.child('v2/a/u').child(auth.uid).child('sessions').child(auth.token.sideySessionId).val() > now && root.child('v2/a/u').child(auth.uid).child('rooms').child($roomId).val() === true && !root.child('v2/a/d').child($roomId).exists()",
           "t": {
             "$uid": {
               "$sessionId": {
-                ".write": "auth != null && auth.uid === $uid && auth.token.sideySessionId === $sessionId && ((newData.exists() && root.child('v2/a/s/v').val() > now && root.child('v2/a/u').child(auth.uid).child('active').val() === true && root.child('v2/a/u').child(auth.uid).child('sessions').child($sessionId).val() > now && root.child('v2/a/u').child(auth.uid).child('rooms').child($roomId).val() === true && !root.child('v2/a/d').child($roomId).exists()) || (data.exists() && !newData.exists()))",
+                ".write": false,
                 ".validate": "newData.isNumber() && newData.val() >= now - 1000 && newData.val() <= now && (!data.exists() || newData.val() >= data.val() + 1500)"
               }
             }
           },
           "c": {
             "$uid": {
-              ".write": "auth != null && auth.uid === $uid && newData.exists() && root.child('v2/a/s/v').val() > now && auth.token.sideySessionId != null && root.child('v2/a/u').child(auth.uid).child('active').val() === true && root.child('v2/a/u').child(auth.uid).child('sessions').child(auth.token.sideySessionId).val() > now && root.child('v2/a/u').child(auth.uid).child('rooms').child($roomId).val() === true && !root.child('v2/a/d').child($roomId).exists()",
+              ".write": false,
               ".validate": "newData.isNumber() && newData.val() >= now - 1000 && newData.val() <= now && (!data.exists() || newData.val() >= data.val() + 1000)"
             }
           },
           "x": {
             "$uid": {
-              ".write": "auth != null && auth.uid === $uid && newData.exists() && root.child('v2/a/s/v').val() > now && auth.token.sideySessionId != null && root.child('v2/a/u').child(auth.uid).child('active').val() === true && root.child('v2/a/u').child(auth.uid).child('sessions').child(auth.token.sideySessionId).val() > now && root.child('v2/a/u').child(auth.uid).child('rooms').child($roomId).val() === true && !root.child('v2/a/d').child($roomId).exists() && newData.child('u').val() !== auth.uid && root.child('v2/a/u').child(newData.child('u').val()).child('active').val() === true && root.child('v2/a/u').child(newData.child('u').val()).child('rooms').child($roomId).val() === true && root.child('v2/a/u').child(auth.uid).child('wire_items').child(newData.child('k').val()).val() === true",
+              ".write": false,
               ".validate": "newData.hasChildren(['u', 'k', 't']) && (!data.exists() || newData.child('t').val() >= data.child('t').val() + 500)",
               "u": {
                 ".validate": "newData.isString() && newData.val().matches(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/)"
@@ -52,7 +52,7 @@
       },
       "n": {
         "$uid": {
-          ".read": "auth != null && auth.uid === $uid && root.child('v2/a/s/v').val() > now && auth.token.sideySessionId != null && root.child('v2/a/u').child(auth.uid).child('active').val() === true && root.child('v2/a/u').child(auth.uid).child('sessions').child(auth.token.sideySessionId).val() > now",
+          ".read": "auth != null && auth.uid === $uid && root.child('v2/a/g/e').val() === true && auth.token.sideyRolloutUntil != null && auth.token.sideyRolloutUntil > now && root.child('v2/a/s/v').val() > now && auth.token.sideySessionId != null && root.child('v2/a/u').child(auth.uid).child('active').val() === true && root.child('v2/a/u').child(auth.uid).child('sessions').child(auth.token.sideySessionId).val() > now",
           ".write": false
         }
       },

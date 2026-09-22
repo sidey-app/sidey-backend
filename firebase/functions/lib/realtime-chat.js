@@ -20,7 +20,9 @@ function parseRealtimeChatRequest(data, auth) {
   if (
     !auth || typeof auth.uid !== "string" || !UUID_PATTERN.test(auth.uid) ||
     typeof auth.token?.sideySessionId !== "string" ||
-    !UUID_PATTERN.test(auth.token.sideySessionId)
+    !UUID_PATTERN.test(auth.token.sideySessionId) ||
+    !Number.isSafeInteger(auth.token?.sideyRolloutUntil) ||
+    auth.token.sideyRolloutUntil <= Date.now()
   ) {
     throw new RealtimeChatError("authentication_required");
   }

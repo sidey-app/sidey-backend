@@ -45,7 +45,11 @@ async function json(url, options = {}) {
 }
 
 function supabaseHeaders(token, apikey = config.publishableKey) {
-  return {apikey, authorization: `Bearer ${token}`, "content-type": "application/json"};
+  const headers = {apikey, "content-type": "application/json"};
+  if (!(token === apikey && token.startsWith("sb_secret_"))) {
+    headers.authorization = `Bearer ${token}`;
+  }
+  return headers;
 }
 
 async function createTemporaryUser(nickname) {
@@ -345,6 +349,37 @@ try {
     if (joinResult.room_id !== roomId || joinResult.error_code) throw new Error("join_failed");
   }
 
+  const legacyMessageId = randomUUID();
+  const legacy = await rpc(owner, "send_message", {
+    p_id: legacyMessageId,
+    p_room_id: roomId,
+    p_body: "legacy staging smoke",
+  });
+  const legacyKeys = [
+    "body", "bubble_style_id", "created_at", "id", "room_id", "sender_id",
+  ];
+  if (!legacy || Array.isArray(legacy) ||
+      Object.keys(legacy).sort().join(",") !== legacyKeys.join(",") ||
+      legacy.id !== legacyMessageId || legacy.room_id !== roomId ||
+      legacy.sender_id !== owner.id || legacy.body !== "legacy staging smoke") {
+    throw new Error("legacy_response_contract_invalid");
+  }
+
+  const selectorResults = await Promise.all(users.map((user) => rpc(
+    user,
+    "register_realtime_capability_v2",
+    {
+      p_platform: "macos",
+      p_app_version: "2.0.0-smoke",
+      p_protocol_version: 2,
+      p_contract_hash: "3c836b40cfc44437e9d069b84787cd3d8793026ce40de46d82b9ece79127b7e5",
+    },
+  )));
+  if (selectorResults.some((result) => result?.enabled !== true ||
+      result?.transport !== "firebase_v2" || result?.killSwitch !== false)) {
+    throw new Error("selector_not_enabled");
+  }
+
   await Promise.all(users.map(bootstrap));
 
   const messageId = randomUUID();
@@ -368,24 +403,26 @@ try {
     throw new Error("chat_publish_not_converged");
   }
 
-  await json(
-    `https://sidey.asia-southeast1.firebasedatabase.app/v2/l/${roomId}/x/${owner.id}.json?auth=${encodeURIComponent(owner.firebaseIdToken)}&print=silent`,
-    {method: "PUT", headers: {"content-type": "application/json"},
-      body: JSON.stringify({u: peer.id, k: "0", t: {".sv": "timestamp"}})},
-  );
-  const thrown = await json(
-    `https://sidey.asia-southeast1.firebasedatabase.app/v2/l/${roomId}/x/${owner.id}.json?auth=${encodeURIComponent(peer.firebaseIdToken)}`,
-  );
-  if (thrown?.u !== peer.id || thrown?.k !== "0" || !Number.isSafeInteger(thrown?.t)) {
-    throw new Error("compact_throw_not_converged");
+  let compactTransientDenied = false;
+  try {
+    await json(
+      `https://sidey.asia-southeast1.firebasedatabase.app/v2/l/${roomId}/x/${owner.id}.json?auth=${encodeURIComponent(owner.firebaseIdToken)}&print=silent`,
+      {method: "PUT", headers: {"content-type": "application/json"},
+        body: JSON.stringify({u: peer.id, k: "0", t: {".sv": "timestamp"}})},
+    );
+  } catch (error) {
+    compactTransientDenied = error?.message === "http_401:request_failed";
   }
+  if (!compactTransientDenied) throw new Error("compact_transient_write_not_denied");
 
   smokeResult = {
     status: "pass",
     databaseInstance: "sidey",
     callable: true,
     chatSequence: sent.n,
-    compactThrow: true,
+    legacyObject: true,
+    transientPlane: "legacy_supabase",
+    compactTransientClientWriteDenied: true,
     users: users.length,
   };
 } finally {

@@ -49,9 +49,16 @@ const event = (sequence = 7, recipients = [sender, peer]) => ({payload: {
 }});
 
 test("callable request uses grapheme count, canonical UUIDs and verified session claim", () => {
+  const validAuth = {
+    uid: sender.toUpperCase(),
+    token: {
+      sideySessionId: session.toUpperCase(),
+      sideyRolloutUntil: Date.now() + 300_000,
+    },
+  };
   const parsed = parseRealtimeChatRequest(
     {r: room.toUpperCase(), i: message.toUpperCase(), b: "  👨‍👩‍👧‍👦\u00a0안녕  "},
-    {uid: sender.toUpperCase(), token: {sideySessionId: session.toUpperCase()}},
+    validAuth,
   );
   assert.equal(parsed.roomId, room);
   assert.equal(parsed.messageId, message);
@@ -61,12 +68,20 @@ test("callable request uses grapheme count, canonical UUIDs and verified session
 
   assert.throws(() => parseRealtimeChatRequest(
     {r: room, i: message, b: "가".repeat(201)},
-    {uid: sender, token: {sideySessionId: session}},
+    validAuth,
   ), (error) => error instanceof RealtimeChatError && error.code === "invalid_message_body");
   assert.throws(() => parseRealtimeChatRequest(
     {r: room, i: message, b: "ok", extra: true},
-    {uid: sender, token: {sideySessionId: session}},
+    validAuth,
   ), /invalid_argument/);
+
+  for (const rolloutUntil of [undefined, Date.now() - 1]) {
+    assert.throws(() => parseRealtimeChatRequest(
+      {r: room, i: message, b: "ok"},
+      {uid: sender, token: {sideySessionId: session, sideyRolloutUntil: rolloutUntil}},
+    ), (error) => error instanceof RealtimeChatError &&
+      error.code === "authentication_required");
+  }
 });
 
 test("publisher writes one compact event and removes a recipient kicked during publish", async () => {

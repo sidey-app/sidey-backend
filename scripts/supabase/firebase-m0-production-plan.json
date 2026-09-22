@@ -1,0 +1,468 @@
+{
+  "schemaVersion": 1,
+  "schemaCanonicalizerVersion": 2,
+  "realtimeContractVersion": 2,
+  "projectRef": "whtejsviizgejauasqqt",
+  "baseRemoteHistorySha256": "95f7d3c049d20d10eb1e6e1e0d9a4ed2304dcd9d7596bdf4df92b39d173c90d7",
+  "phaseMigrations": [
+    {
+      "version": "20260921140000",
+      "name": "firebase_production_shadow_foundation",
+      "filename": "20260921140000_firebase_production_shadow_foundation.sql",
+      "sha256": "b2b7657e03074d9e8ee392beceb9fb33997e82546023eff46f8a4c1573d1e0b4"
+    },
+    {
+      "version": "20260921140100",
+      "name": "firebase_production_live_transport",
+      "filename": "20260921140100_firebase_production_live_transport.sql",
+      "sha256": "2055bfde4db5d63d2867f640f5025011bcbe7270d9e4b2c34a9101709f62b3c0"
+    },
+    {
+      "version": "20260921140200",
+      "name": "firebase_production_live_edge_dispatch",
+      "filename": "20260921140200_firebase_production_live_edge_dispatch.sql",
+      "sha256": "f70287e91d1007e3e8bc015ede2415ebde2813f65b7b775185b314e43e439705"
+    },
+    {
+      "version": "20260921140300",
+      "name": "firebase_production_live_fast_dispatch",
+      "filename": "20260921140300_firebase_production_live_fast_dispatch.sql",
+      "sha256": "705b05b702cc34e444bf8af3f09ee878d3aacfe01dc22d8eedca40f69b0e6714"
+    },
+    {
+      "version": "20260921140400",
+      "name": "firebase_production_direct_events",
+      "filename": "20260921140400_firebase_production_direct_events.sql",
+      "sha256": "737e0d362dd061281f1455277e2a879cc811c5c4bf8a976d98988e6d45f9a7bf"
+    },
+    {
+      "version": "20260921140500",
+      "name": "firebase_production_publisher_pipeline",
+      "filename": "20260921140500_firebase_production_publisher_pipeline.sql",
+      "sha256": "e203cf37a40967910a32e28d3cd30ad99d16035b2ec5db86fc66e97844dd8e8d"
+    },
+    {
+      "version": "20260921140600",
+      "name": "firebase_production_publish_wake",
+      "filename": "20260921140600_firebase_production_publish_wake.sql",
+      "sha256": "8cea1fe53467b29a11d39a72e8893671e0385d701c873af27a5bdf410f889ee2"
+    },
+    {
+      "version": "20260921140700",
+      "name": "firebase_production_edge_region",
+      "filename": "20260921140700_firebase_production_edge_region.sql",
+      "sha256": "28f4afd8d50ce70525d70c6b715092ab3fbf40375f357cd9def7bafbd21fd7af"
+    },
+    {
+      "version": "20260921140800",
+      "name": "firebase_production_publisher_ack_claim",
+      "filename": "20260921140800_firebase_production_publisher_ack_claim.sql",
+      "sha256": "204cad80609e72035d52ef8c21a289f5e6dd8dbad82a206ae5ece9e4ab4b1efd"
+    },
+    {
+      "version": "20260921140900",
+      "name": "firebase_production_chat_bridge",
+      "filename": "20260921140900_firebase_production_chat_bridge.sql",
+      "sha256": "cbeaf0efba59120982e3e5291a826338768052b5f4169ea8b58282052db3efab"
+    },
+    {
+      "version": "20260921141000",
+      "name": "firebase_production_event_driven_access",
+      "filename": "20260921141000_firebase_production_event_driven_access.sql",
+      "sha256": "7b482215dda8fae1631b9b03e8b06f568578af1755b157e279a20206ef0a8cf7"
+    },
+    {
+      "version": "20260921141100",
+      "name": "firebase_production_access_failure_isolation",
+      "filename": "20260921141100_firebase_production_access_failure_isolation.sql",
+      "sha256": "937f3a7dbdba6f95fadcff085c88fa5a66a1ebae69e951f9121b9b45e790d8f8"
+    },
+    {
+      "version": "20260921141200",
+      "name": "firebase_production_room_revision_outbox",
+      "filename": "20260921141200_firebase_production_room_revision_outbox.sql",
+      "sha256": "1dbf2368144337b082c366b2c993b3dbbda4b5a0169fff16a33c9d76b0d62be0"
+    },
+    {
+      "version": "20260921141300",
+      "name": "firebase_production_presence_inbox_delivery",
+      "filename": "20260921141300_firebase_production_presence_inbox_delivery.sql",
+      "sha256": "99e40f7de49ac4e907245a740fef8202cdcd134d98fd45486af29fe814e4e2c1"
+    },
+    {
+      "version": "20260921141400",
+      "name": "firebase_production_presence_revocation_and_revision_fence",
+      "filename": "20260921141400_firebase_production_presence_revocation_and_revision_fence.sql",
+      "sha256": "8fea45f321a4d813ec40127770bdad47a956ced118037badc24646bda70accb8"
+    },
+    {
+      "version": "20260921141500",
+      "name": "firebase_production_sequence_prepare",
+      "filename": "20260921141500_firebase_production_sequence_prepare.sql",
+      "sha256": "366404f2cac4e1ec7f174a1d0898b366b3aefa9d7dc434982a2a2a53e3c75fd7"
+    },
+    {
+      "version": "20260921141600",
+      "name": "firebase_production_sequence_index",
+      "filename": "20260921141600_firebase_production_sequence_index.sql",
+      "sha256": "6c9e6b6ee0c98b0db0a8be30d19bf53a675f50cbf761e8ef515e80c0375233e2"
+    },
+    {
+      "version": "20260921141640",
+      "name": "firebase_production_message_constraints_add",
+      "filename": "20260921141640_firebase_production_message_constraints_add.sql",
+      "sha256": "8761f2706cfac8978ad222e01e8ce83508c4516b599cd74aac71c491dcb9fd8a"
+    },
+    {
+      "version": "20260921141650",
+      "name": "firebase_production_message_constraints_validate",
+      "filename": "20260921141650_firebase_production_message_constraints_validate.sql",
+      "sha256": "35c065b2cc270e66e0a9224186a8cb0c6a9eb035455152569d94de4bd2df36f7"
+    },
+    {
+      "version": "20260921141700",
+      "name": "firebase_production_sequence_finalize",
+      "filename": "20260921141700_firebase_production_sequence_finalize.sql",
+      "sha256": "81ef215f2739b7ddb3e208dd6491dc9994f89ab20cee0032fe86887cda96c5b1"
+    },
+    {
+      "version": "20260921141800",
+      "name": "firebase_production_compact_chat_contract",
+      "filename": "20260921141800_firebase_production_compact_chat_contract.sql",
+      "sha256": "1ce51bfa02d5096b974191c2e895254bac4f61e750285f6fc038dc7fede5e28e"
+    },
+    {
+      "version": "20260921141900",
+      "name": "firebase_production_wake_header",
+      "filename": "20260921141900_firebase_production_wake_header.sql",
+      "sha256": "496100679d6233beb3160d7d5057da8a772c3e1c71a2a2e891c692c405945e65"
+    },
+    {
+      "version": "20260921142000",
+      "name": "firebase_production_chat_outbox_compaction",
+      "filename": "20260921142000_firebase_production_chat_outbox_compaction.sql",
+      "sha256": "d1cbeff0cf99b805d429f0e8c0cfdb2a32da4ce6e94316949b27b0f3564c841a"
+    },
+    {
+      "version": "20260921142100",
+      "name": "firebase_production_live_lease_one_hour",
+      "filename": "20260921142100_firebase_production_live_lease_one_hour.sql",
+      "sha256": "b81ab1c6be64b3193a94d61ee527ed706a085bf652f9e86da156421146176301"
+    },
+    {
+      "version": "20260921142200",
+      "name": "firebase_production_delivery_status",
+      "filename": "20260921142200_firebase_production_delivery_status.sql",
+      "sha256": "60ab5214dc14f0d7ee8a338009b55e2c62c211a478219d129936d725a3b7b74a"
+    },
+    {
+      "version": "20260921142300",
+      "name": "firebase_production_access_delivery_snapshot",
+      "filename": "20260921142300_firebase_production_access_delivery_snapshot.sql",
+      "sha256": "a686ed65227b490181b6c709262c0a25002a829d22f7b382ea892746297ca2ae"
+    }
+  ],
+  "baseSchema": {
+    "objectCount": 0,
+    "sha256": "75146abbdf282d15113eb3ebe792adf1b5bda65c48160a73b33fd8d2c1a759fe",
+    "realtimeContractSha256": "620204f57bdd524630b7f72c7e6d68a34113a4deb01c8d799e33315c98afb18e",
+    "constraintCatalog": [
+      {
+        "schema": "private",
+        "table": "app_store_transactions",
+        "name": "app_store_transactions_id_length",
+        "type": "c",
+        "validated": true,
+        "deferrable": false,
+        "deferred": false,
+        "noInherit": false,
+        "definition": "CHECK (char_length(transaction_id) >= 1 AND char_length(transaction_id) <= 128 AND char_length(original_transaction_id) >= 1 AND char_length(original_transaction_id) <= 128)",
+        "dumpVariants": [
+          "    CONSTRAINT \"app_store_transactions_id_length\" CHECK ((((\"char_length\"(\"transaction_id\") >= 1) AND (\"char_length\"(\"transaction_id\") <= 128)) AND ((\"char_length\"(\"original_transaction_id\") >= 1) AND (\"char_length\"(\"original_transaction_id\") <= 128)))),",
+          "    CONSTRAINT \"app_store_transactions_id_length\" CHECK (((\"char_length\"(\"transaction_id\") >= 1) AND (\"char_length\"(\"transaction_id\") <= 128) AND ((\"char_length\"(\"original_transaction_id\") >= 1) AND (\"char_length\"(\"original_transaction_id\") <= 128)))),"
+        ]
+      },
+      {
+        "schema": "private",
+        "table": "commerce_payments",
+        "name": "commerce_payments_portone_fields",
+        "type": "c",
+        "validated": true,
+        "deferrable": false,
+        "deferred": false,
+        "noInherit": false,
+        "definition": "CHECK (provider <> 'portone'::text OR char_length(portone_payment_id) >= 6 AND char_length(portone_payment_id) <= 200 AND char_length(portone_store_id) >= 6 AND char_length(portone_store_id) <= 200 AND char_length(portone_channel_key) >= 6 AND char_length(portone_channel_key) <= 200 AND portone_version = 'V2'::text AND (portone_channel_type = ANY (ARRAY['TEST'::text, 'LIVE'::text])) AND payment_method_type IS NOT NULL AND (payment_method_type = ANY (ARRAY['CARD'::text, 'EASY_PAY'::text])) AND balance_amount_krw >= 0)",
+        "dumpVariants": [
+          "    CONSTRAINT \"commerce_payments_portone_fields\" CHECK (((\"provider\" <> 'portone'::\"text\") OR (((\"char_length\"(\"portone_payment_id\") >= 6) AND (\"char_length\"(\"portone_payment_id\") <= 200)) AND ((\"char_length\"(\"portone_store_id\") >= 6) AND (\"char_length\"(\"portone_store_id\") <= 200)) AND ((\"char_length\"(\"portone_channel_key\") >= 6) AND (\"char_length\"(\"portone_channel_key\") <= 200)) AND (\"portone_version\" = 'V2'::\"text\") AND (\"portone_channel_type\" = ANY (ARRAY['TEST'::\"text\", 'LIVE'::\"text\"])) AND (\"payment_method_type\" IS NOT NULL) AND (\"payment_method_type\" = ANY (ARRAY['CARD'::\"text\", 'EASY_PAY'::\"text\"])) AND (\"balance_amount_krw\" >= 0)))),",
+          "    CONSTRAINT \"commerce_payments_portone_fields\" CHECK (((\"provider\" <> 'portone'::\"text\") OR ((\"char_length\"(\"portone_payment_id\") >= 6) AND (\"char_length\"(\"portone_payment_id\") <= 200) AND ((\"char_length\"(\"portone_store_id\") >= 6) AND (\"char_length\"(\"portone_store_id\") <= 200)) AND ((\"char_length\"(\"portone_channel_key\") >= 6) AND (\"char_length\"(\"portone_channel_key\") <= 200)) AND (\"portone_version\" = 'V2'::\"text\") AND (\"portone_channel_type\" = ANY (ARRAY['TEST'::\"text\", 'LIVE'::\"text\"])) AND (\"payment_method_type\" IS NOT NULL) AND (\"payment_method_type\" = ANY (ARRAY['CARD'::\"text\", 'EASY_PAY'::\"text\"])) AND (\"balance_amount_krw\" >= 0)))),"
+        ]
+      }
+    ],
+    "authFactorType": ["totp", "webauthn", "phone", "recovery_code"]
+  },
+  "prefix13Schema": {
+    "phaseCount": 13,
+    "objectCount": 20,
+    "sha256": "6bca8bf82044e4b879a6c063b56d32ea7ecf16cf58e28b178bdce59d9d93e8d7",
+    "atomicRunnerSha256": "6953e8c9e761b082d313ad95d659bf2783768dc95e673d76b9b147ce5298a2e4",
+    "realtimeContractSha256": "620204f57bdd524630b7f72c7e6d68a34113a4deb01c8d799e33315c98afb18e",
+    "constraintCatalog": [
+      {
+        "schema": "private",
+        "table": "app_store_transactions",
+        "name": "app_store_transactions_id_length",
+        "type": "c",
+        "validated": true,
+        "deferrable": false,
+        "deferred": false,
+        "noInherit": false,
+        "definition": "CHECK (char_length(transaction_id) >= 1 AND char_length(transaction_id) <= 128 AND char_length(original_transaction_id) >= 1 AND char_length(original_transaction_id) <= 128)",
+        "dumpVariants": [
+          "    CONSTRAINT \"app_store_transactions_id_length\" CHECK ((((\"char_length\"(\"transaction_id\") >= 1) AND (\"char_length\"(\"transaction_id\") <= 128)) AND ((\"char_length\"(\"original_transaction_id\") >= 1) AND (\"char_length\"(\"original_transaction_id\") <= 128)))),",
+          "    CONSTRAINT \"app_store_transactions_id_length\" CHECK (((\"char_length\"(\"transaction_id\") >= 1) AND (\"char_length\"(\"transaction_id\") <= 128) AND ((\"char_length\"(\"original_transaction_id\") >= 1) AND (\"char_length\"(\"original_transaction_id\") <= 128)))),"
+        ]
+      },
+      {
+        "schema": "private",
+        "table": "commerce_payments",
+        "name": "commerce_payments_portone_fields",
+        "type": "c",
+        "validated": true,
+        "deferrable": false,
+        "deferred": false,
+        "noInherit": false,
+        "definition": "CHECK (provider <> 'portone'::text OR char_length(portone_payment_id) >= 6 AND char_length(portone_payment_id) <= 200 AND char_length(portone_store_id) >= 6 AND char_length(portone_store_id) <= 200 AND char_length(portone_channel_key) >= 6 AND char_length(portone_channel_key) <= 200 AND portone_version = 'V2'::text AND (portone_channel_type = ANY (ARRAY['TEST'::text, 'LIVE'::text])) AND payment_method_type IS NOT NULL AND (payment_method_type = ANY (ARRAY['CARD'::text, 'EASY_PAY'::text])) AND balance_amount_krw >= 0)",
+        "dumpVariants": [
+          "    CONSTRAINT \"commerce_payments_portone_fields\" CHECK (((\"provider\" <> 'portone'::\"text\") OR (((\"char_length\"(\"portone_payment_id\") >= 6) AND (\"char_length\"(\"portone_payment_id\") <= 200)) AND ((\"char_length\"(\"portone_store_id\") >= 6) AND (\"char_length\"(\"portone_store_id\") <= 200)) AND ((\"char_length\"(\"portone_channel_key\") >= 6) AND (\"char_length\"(\"portone_channel_key\") <= 200)) AND (\"portone_version\" = 'V2'::\"text\") AND (\"portone_channel_type\" = ANY (ARRAY['TEST'::\"text\", 'LIVE'::\"text\"])) AND (\"payment_method_type\" IS NOT NULL) AND (\"payment_method_type\" = ANY (ARRAY['CARD'::\"text\", 'EASY_PAY'::\"text\"])) AND (\"balance_amount_krw\" >= 0)))),",
+          "    CONSTRAINT \"commerce_payments_portone_fields\" CHECK (((\"provider\" <> 'portone'::\"text\") OR ((\"char_length\"(\"portone_payment_id\") >= 6) AND (\"char_length\"(\"portone_payment_id\") <= 200) AND ((\"char_length\"(\"portone_store_id\") >= 6) AND (\"char_length\"(\"portone_store_id\") <= 200)) AND ((\"char_length\"(\"portone_channel_key\") >= 6) AND (\"char_length\"(\"portone_channel_key\") <= 200)) AND (\"portone_version\" = 'V2'::\"text\") AND (\"portone_channel_type\" = ANY (ARRAY['TEST'::\"text\", 'LIVE'::\"text\"])) AND (\"payment_method_type\" IS NOT NULL) AND (\"payment_method_type\" = ANY (ARRAY['CARD'::\"text\", 'EASY_PAY'::\"text\"])) AND (\"balance_amount_krw\" >= 0)))),"
+        ]
+      }
+    ],
+    "authFactorType": ["totp", "webauthn", "phone", "recovery_code"]
+  },
+  "prefix16Schema": {
+    "phaseCount": 16,
+    "objectCount": 22,
+    "sha256": "d0e32cdaa0e8d339733a66c2e7100548dd8c45491f554d29223bee6ac81cca0a",
+    "atomicRunnerSha256": "2ff6af42ec3c4be6fbbabd90197e74ff2fc4ff3362b3faf16cfc65b247762e92",
+    "realtimeContractSha256": "b2ea5e5bcd146bb952d48aedee92303821daefa967521279acf34d30f56c98e0",
+    "constraintCatalog": [
+      {
+        "schema": "private",
+        "table": "app_store_transactions",
+        "name": "app_store_transactions_id_length",
+        "type": "c",
+        "validated": true,
+        "deferrable": false,
+        "deferred": false,
+        "noInherit": false,
+        "definition": "CHECK (char_length(transaction_id) >= 1 AND char_length(transaction_id) <= 128 AND char_length(original_transaction_id) >= 1 AND char_length(original_transaction_id) <= 128)",
+        "dumpVariants": [
+          "    CONSTRAINT \"app_store_transactions_id_length\" CHECK ((((\"char_length\"(\"transaction_id\") >= 1) AND (\"char_length\"(\"transaction_id\") <= 128)) AND ((\"char_length\"(\"original_transaction_id\") >= 1) AND (\"char_length\"(\"original_transaction_id\") <= 128)))),",
+          "    CONSTRAINT \"app_store_transactions_id_length\" CHECK (((\"char_length\"(\"transaction_id\") >= 1) AND (\"char_length\"(\"transaction_id\") <= 128) AND ((\"char_length\"(\"original_transaction_id\") >= 1) AND (\"char_length\"(\"original_transaction_id\") <= 128)))),"
+        ]
+      },
+      {
+        "schema": "private",
+        "table": "commerce_payments",
+        "name": "commerce_payments_portone_fields",
+        "type": "c",
+        "validated": true,
+        "deferrable": false,
+        "deferred": false,
+        "noInherit": false,
+        "definition": "CHECK (provider <> 'portone'::text OR char_length(portone_payment_id) >= 6 AND char_length(portone_payment_id) <= 200 AND char_length(portone_store_id) >= 6 AND char_length(portone_store_id) <= 200 AND char_length(portone_channel_key) >= 6 AND char_length(portone_channel_key) <= 200 AND portone_version = 'V2'::text AND (portone_channel_type = ANY (ARRAY['TEST'::text, 'LIVE'::text])) AND payment_method_type IS NOT NULL AND (payment_method_type = ANY (ARRAY['CARD'::text, 'EASY_PAY'::text])) AND balance_amount_krw >= 0)",
+        "dumpVariants": [
+          "    CONSTRAINT \"commerce_payments_portone_fields\" CHECK (((\"provider\" <> 'portone'::\"text\") OR (((\"char_length\"(\"portone_payment_id\") >= 6) AND (\"char_length\"(\"portone_payment_id\") <= 200)) AND ((\"char_length\"(\"portone_store_id\") >= 6) AND (\"char_length\"(\"portone_store_id\") <= 200)) AND ((\"char_length\"(\"portone_channel_key\") >= 6) AND (\"char_length\"(\"portone_channel_key\") <= 200)) AND (\"portone_version\" = 'V2'::\"text\") AND (\"portone_channel_type\" = ANY (ARRAY['TEST'::\"text\", 'LIVE'::\"text\"])) AND (\"payment_method_type\" IS NOT NULL) AND (\"payment_method_type\" = ANY (ARRAY['CARD'::\"text\", 'EASY_PAY'::\"text\"])) AND (\"balance_amount_krw\" >= 0)))),",
+          "    CONSTRAINT \"commerce_payments_portone_fields\" CHECK (((\"provider\" <> 'portone'::\"text\") OR ((\"char_length\"(\"portone_payment_id\") >= 6) AND (\"char_length\"(\"portone_payment_id\") <= 200) AND ((\"char_length\"(\"portone_store_id\") >= 6) AND (\"char_length\"(\"portone_store_id\") <= 200)) AND ((\"char_length\"(\"portone_channel_key\") >= 6) AND (\"char_length\"(\"portone_channel_key\") <= 200)) AND (\"portone_version\" = 'V2'::\"text\") AND (\"portone_channel_type\" = ANY (ARRAY['TEST'::\"text\", 'LIVE'::\"text\"])) AND (\"payment_method_type\" IS NOT NULL) AND (\"payment_method_type\" = ANY (ARRAY['CARD'::\"text\", 'EASY_PAY'::\"text\"])) AND (\"balance_amount_krw\" >= 0)))),"
+        ]
+      }
+    ],
+    "authFactorType": ["totp", "webauthn", "phone", "recovery_code"]
+  },
+  "prefix16IndexSchema": {
+    "phaseCount": 16,
+    "objectCount": 22,
+    "sha256": "1744817979a1da26221033c000869bab4910091b8c812507b648c13842f7cc1a",
+    "atomicRunnerSha256": "0881177a33e029fb78986ffde7c0b780220f398e4182bdc487d48b59438e6999",
+    "realtimeContractSha256": "b2ea5e5bcd146bb952d48aedee92303821daefa967521279acf34d30f56c98e0",
+    "constraintCatalog": [
+      {
+        "schema": "private",
+        "table": "app_store_transactions",
+        "name": "app_store_transactions_id_length",
+        "type": "c",
+        "validated": true,
+        "deferrable": false,
+        "deferred": false,
+        "noInherit": false,
+        "definition": "CHECK (char_length(transaction_id) >= 1 AND char_length(transaction_id) <= 128 AND char_length(original_transaction_id) >= 1 AND char_length(original_transaction_id) <= 128)",
+        "dumpVariants": [
+          "    CONSTRAINT \"app_store_transactions_id_length\" CHECK ((((\"char_length\"(\"transaction_id\") >= 1) AND (\"char_length\"(\"transaction_id\") <= 128)) AND ((\"char_length\"(\"original_transaction_id\") >= 1) AND (\"char_length\"(\"original_transaction_id\") <= 128)))),",
+          "    CONSTRAINT \"app_store_transactions_id_length\" CHECK (((\"char_length\"(\"transaction_id\") >= 1) AND (\"char_length\"(\"transaction_id\") <= 128) AND ((\"char_length\"(\"original_transaction_id\") >= 1) AND (\"char_length\"(\"original_transaction_id\") <= 128)))),"
+        ]
+      },
+      {
+        "schema": "private",
+        "table": "commerce_payments",
+        "name": "commerce_payments_portone_fields",
+        "type": "c",
+        "validated": true,
+        "deferrable": false,
+        "deferred": false,
+        "noInherit": false,
+        "definition": "CHECK (provider <> 'portone'::text OR char_length(portone_payment_id) >= 6 AND char_length(portone_payment_id) <= 200 AND char_length(portone_store_id) >= 6 AND char_length(portone_store_id) <= 200 AND char_length(portone_channel_key) >= 6 AND char_length(portone_channel_key) <= 200 AND portone_version = 'V2'::text AND (portone_channel_type = ANY (ARRAY['TEST'::text, 'LIVE'::text])) AND payment_method_type IS NOT NULL AND (payment_method_type = ANY (ARRAY['CARD'::text, 'EASY_PAY'::text])) AND balance_amount_krw >= 0)",
+        "dumpVariants": [
+          "    CONSTRAINT \"commerce_payments_portone_fields\" CHECK (((\"provider\" <> 'portone'::\"text\") OR (((\"char_length\"(\"portone_payment_id\") >= 6) AND (\"char_length\"(\"portone_payment_id\") <= 200)) AND ((\"char_length\"(\"portone_store_id\") >= 6) AND (\"char_length\"(\"portone_store_id\") <= 200)) AND ((\"char_length\"(\"portone_channel_key\") >= 6) AND (\"char_length\"(\"portone_channel_key\") <= 200)) AND (\"portone_version\" = 'V2'::\"text\") AND (\"portone_channel_type\" = ANY (ARRAY['TEST'::\"text\", 'LIVE'::\"text\"])) AND (\"payment_method_type\" IS NOT NULL) AND (\"payment_method_type\" = ANY (ARRAY['CARD'::\"text\", 'EASY_PAY'::\"text\"])) AND (\"balance_amount_krw\" >= 0)))),",
+          "    CONSTRAINT \"commerce_payments_portone_fields\" CHECK (((\"provider\" <> 'portone'::\"text\") OR ((\"char_length\"(\"portone_payment_id\") >= 6) AND (\"char_length\"(\"portone_payment_id\") <= 200) AND ((\"char_length\"(\"portone_store_id\") >= 6) AND (\"char_length\"(\"portone_store_id\") <= 200)) AND ((\"char_length\"(\"portone_channel_key\") >= 6) AND (\"char_length\"(\"portone_channel_key\") <= 200)) AND (\"portone_version\" = 'V2'::\"text\") AND (\"portone_channel_type\" = ANY (ARRAY['TEST'::\"text\", 'LIVE'::\"text\"])) AND (\"payment_method_type\" IS NOT NULL) AND (\"payment_method_type\" = ANY (ARRAY['CARD'::\"text\", 'EASY_PAY'::\"text\"])) AND (\"balance_amount_krw\" >= 0)))),"
+        ]
+      }
+    ],
+    "authFactorType": ["totp", "webauthn", "phone", "recovery_code"]
+  },
+  "prefix17Schema": {
+    "phaseCount": 17,
+    "objectCount": 22,
+    "sha256": "1744817979a1da26221033c000869bab4910091b8c812507b648c13842f7cc1a",
+    "realtimeContractSha256": "b2ea5e5bcd146bb952d48aedee92303821daefa967521279acf34d30f56c98e0",
+    "constraintCatalog": [
+      {
+        "schema": "private",
+        "table": "app_store_transactions",
+        "name": "app_store_transactions_id_length",
+        "type": "c",
+        "validated": true,
+        "deferrable": false,
+        "deferred": false,
+        "noInherit": false,
+        "definition": "CHECK (char_length(transaction_id) >= 1 AND char_length(transaction_id) <= 128 AND char_length(original_transaction_id) >= 1 AND char_length(original_transaction_id) <= 128)",
+        "dumpVariants": [
+          "    CONSTRAINT \"app_store_transactions_id_length\" CHECK ((((\"char_length\"(\"transaction_id\") >= 1) AND (\"char_length\"(\"transaction_id\") <= 128)) AND ((\"char_length\"(\"original_transaction_id\") >= 1) AND (\"char_length\"(\"original_transaction_id\") <= 128)))),",
+          "    CONSTRAINT \"app_store_transactions_id_length\" CHECK (((\"char_length\"(\"transaction_id\") >= 1) AND (\"char_length\"(\"transaction_id\") <= 128) AND ((\"char_length\"(\"original_transaction_id\") >= 1) AND (\"char_length\"(\"original_transaction_id\") <= 128)))),"
+        ]
+      },
+      {
+        "schema": "private",
+        "table": "commerce_payments",
+        "name": "commerce_payments_portone_fields",
+        "type": "c",
+        "validated": true,
+        "deferrable": false,
+        "deferred": false,
+        "noInherit": false,
+        "definition": "CHECK (provider <> 'portone'::text OR char_length(portone_payment_id) >= 6 AND char_length(portone_payment_id) <= 200 AND char_length(portone_store_id) >= 6 AND char_length(portone_store_id) <= 200 AND char_length(portone_channel_key) >= 6 AND char_length(portone_channel_key) <= 200 AND portone_version = 'V2'::text AND (portone_channel_type = ANY (ARRAY['TEST'::text, 'LIVE'::text])) AND payment_method_type IS NOT NULL AND (payment_method_type = ANY (ARRAY['CARD'::text, 'EASY_PAY'::text])) AND balance_amount_krw >= 0)",
+        "dumpVariants": [
+          "    CONSTRAINT \"commerce_payments_portone_fields\" CHECK (((\"provider\" <> 'portone'::\"text\") OR (((\"char_length\"(\"portone_payment_id\") >= 6) AND (\"char_length\"(\"portone_payment_id\") <= 200)) AND ((\"char_length\"(\"portone_store_id\") >= 6) AND (\"char_length\"(\"portone_store_id\") <= 200)) AND ((\"char_length\"(\"portone_channel_key\") >= 6) AND (\"char_length\"(\"portone_channel_key\") <= 200)) AND (\"portone_version\" = 'V2'::\"text\") AND (\"portone_channel_type\" = ANY (ARRAY['TEST'::\"text\", 'LIVE'::\"text\"])) AND (\"payment_method_type\" IS NOT NULL) AND (\"payment_method_type\" = ANY (ARRAY['CARD'::\"text\", 'EASY_PAY'::\"text\"])) AND (\"balance_amount_krw\" >= 0)))),",
+          "    CONSTRAINT \"commerce_payments_portone_fields\" CHECK (((\"provider\" <> 'portone'::\"text\") OR ((\"char_length\"(\"portone_payment_id\") >= 6) AND (\"char_length\"(\"portone_payment_id\") <= 200) AND ((\"char_length\"(\"portone_store_id\") >= 6) AND (\"char_length\"(\"portone_store_id\") <= 200)) AND ((\"char_length\"(\"portone_channel_key\") >= 6) AND (\"char_length\"(\"portone_channel_key\") <= 200)) AND (\"portone_version\" = 'V2'::\"text\") AND (\"portone_channel_type\" = ANY (ARRAY['TEST'::\"text\", 'LIVE'::\"text\"])) AND (\"payment_method_type\" IS NOT NULL) AND (\"payment_method_type\" = ANY (ARRAY['CARD'::\"text\", 'EASY_PAY'::\"text\"])) AND (\"balance_amount_krw\" >= 0)))),"
+        ]
+      }
+    ],
+    "authFactorType": ["totp", "webauthn", "phone", "recovery_code"]
+  },
+  "readySchema": {
+    "objectCount": 23,
+    "sha256": "5de138237acf50177a7d0e656a2eda7e15a33a73a5a02a823b33b1a29581d117",
+    "realtimeContractSha256": "b2ea5e5bcd146bb952d48aedee92303821daefa967521279acf34d30f56c98e0",
+    "constraintCatalog": [
+      {
+        "schema": "private",
+        "table": "app_store_transactions",
+        "name": "app_store_transactions_id_length",
+        "type": "c",
+        "validated": true,
+        "deferrable": false,
+        "deferred": false,
+        "noInherit": false,
+        "definition": "CHECK (char_length(transaction_id) >= 1 AND char_length(transaction_id) <= 128 AND char_length(original_transaction_id) >= 1 AND char_length(original_transaction_id) <= 128)",
+        "dumpVariants": [
+          "    CONSTRAINT \"app_store_transactions_id_length\" CHECK ((((\"char_length\"(\"transaction_id\") >= 1) AND (\"char_length\"(\"transaction_id\") <= 128)) AND ((\"char_length\"(\"original_transaction_id\") >= 1) AND (\"char_length\"(\"original_transaction_id\") <= 128)))),",
+          "    CONSTRAINT \"app_store_transactions_id_length\" CHECK (((\"char_length\"(\"transaction_id\") >= 1) AND (\"char_length\"(\"transaction_id\") <= 128) AND ((\"char_length\"(\"original_transaction_id\") >= 1) AND (\"char_length\"(\"original_transaction_id\") <= 128)))),"
+        ]
+      },
+      {
+        "schema": "private",
+        "table": "commerce_payments",
+        "name": "commerce_payments_portone_fields",
+        "type": "c",
+        "validated": true,
+        "deferrable": false,
+        "deferred": false,
+        "noInherit": false,
+        "definition": "CHECK (provider <> 'portone'::text OR char_length(portone_payment_id) >= 6 AND char_length(portone_payment_id) <= 200 AND char_length(portone_store_id) >= 6 AND char_length(portone_store_id) <= 200 AND char_length(portone_channel_key) >= 6 AND char_length(portone_channel_key) <= 200 AND portone_version = 'V2'::text AND (portone_channel_type = ANY (ARRAY['TEST'::text, 'LIVE'::text])) AND payment_method_type IS NOT NULL AND (payment_method_type = ANY (ARRAY['CARD'::text, 'EASY_PAY'::text])) AND balance_amount_krw >= 0)",
+        "dumpVariants": [
+          "    CONSTRAINT \"commerce_payments_portone_fields\" CHECK (((\"provider\" <> 'portone'::\"text\") OR (((\"char_length\"(\"portone_payment_id\") >= 6) AND (\"char_length\"(\"portone_payment_id\") <= 200)) AND ((\"char_length\"(\"portone_store_id\") >= 6) AND (\"char_length\"(\"portone_store_id\") <= 200)) AND ((\"char_length\"(\"portone_channel_key\") >= 6) AND (\"char_length\"(\"portone_channel_key\") <= 200)) AND (\"portone_version\" = 'V2'::\"text\") AND (\"portone_channel_type\" = ANY (ARRAY['TEST'::\"text\", 'LIVE'::\"text\"])) AND (\"payment_method_type\" IS NOT NULL) AND (\"payment_method_type\" = ANY (ARRAY['CARD'::\"text\", 'EASY_PAY'::\"text\"])) AND (\"balance_amount_krw\" >= 0)))),",
+          "    CONSTRAINT \"commerce_payments_portone_fields\" CHECK (((\"provider\" <> 'portone'::\"text\") OR ((\"char_length\"(\"portone_payment_id\") >= 6) AND (\"char_length\"(\"portone_payment_id\") <= 200) AND ((\"char_length\"(\"portone_store_id\") >= 6) AND (\"char_length\"(\"portone_store_id\") <= 200)) AND ((\"char_length\"(\"portone_channel_key\") >= 6) AND (\"char_length\"(\"portone_channel_key\") <= 200)) AND (\"portone_version\" = 'V2'::\"text\") AND (\"portone_channel_type\" = ANY (ARRAY['TEST'::\"text\", 'LIVE'::\"text\"])) AND (\"payment_method_type\" IS NOT NULL) AND (\"payment_method_type\" = ANY (ARRAY['CARD'::\"text\", 'EASY_PAY'::\"text\"])) AND (\"balance_amount_krw\" >= 0)))),"
+        ]
+      }
+    ],
+    "authFactorType": ["totp", "webauthn", "phone", "recovery_code"]
+  },
+  "finalSchema": {
+    "objectCount": 25,
+    "sha256": "6425dcd8ebeafdeb0890d34780355fe20de6903da891e34af3d19d635da28948",
+    "realtimeContractSha256": "b2ea5e5bcd146bb952d48aedee92303821daefa967521279acf34d30f56c98e0",
+    "constraintCatalog": [
+      {
+        "schema": "private",
+        "table": "app_store_transactions",
+        "name": "app_store_transactions_id_length",
+        "type": "c",
+        "validated": true,
+        "deferrable": false,
+        "deferred": false,
+        "noInherit": false,
+        "definition": "CHECK (char_length(transaction_id) >= 1 AND char_length(transaction_id) <= 128 AND char_length(original_transaction_id) >= 1 AND char_length(original_transaction_id) <= 128)",
+        "dumpVariants": [
+          "    CONSTRAINT \"app_store_transactions_id_length\" CHECK ((((\"char_length\"(\"transaction_id\") >= 1) AND (\"char_length\"(\"transaction_id\") <= 128)) AND ((\"char_length\"(\"original_transaction_id\") >= 1) AND (\"char_length\"(\"original_transaction_id\") <= 128)))),",
+          "    CONSTRAINT \"app_store_transactions_id_length\" CHECK (((\"char_length\"(\"transaction_id\") >= 1) AND (\"char_length\"(\"transaction_id\") <= 128) AND ((\"char_length\"(\"original_transaction_id\") >= 1) AND (\"char_length\"(\"original_transaction_id\") <= 128)))),"
+        ]
+      },
+      {
+        "schema": "private",
+        "table": "commerce_payments",
+        "name": "commerce_payments_portone_fields",
+        "type": "c",
+        "validated": true,
+        "deferrable": false,
+        "deferred": false,
+        "noInherit": false,
+        "definition": "CHECK (provider <> 'portone'::text OR char_length(portone_payment_id) >= 6 AND char_length(portone_payment_id) <= 200 AND char_length(portone_store_id) >= 6 AND char_length(portone_store_id) <= 200 AND char_length(portone_channel_key) >= 6 AND char_length(portone_channel_key) <= 200 AND portone_version = 'V2'::text AND (portone_channel_type = ANY (ARRAY['TEST'::text, 'LIVE'::text])) AND payment_method_type IS NOT NULL AND (payment_method_type = ANY (ARRAY['CARD'::text, 'EASY_PAY'::text])) AND balance_amount_krw >= 0)",
+        "dumpVariants": [
+          "    CONSTRAINT \"commerce_payments_portone_fields\" CHECK (((\"provider\" <> 'portone'::\"text\") OR (((\"char_length\"(\"portone_payment_id\") >= 6) AND (\"char_length\"(\"portone_payment_id\") <= 200)) AND ((\"char_length\"(\"portone_store_id\") >= 6) AND (\"char_length\"(\"portone_store_id\") <= 200)) AND ((\"char_length\"(\"portone_channel_key\") >= 6) AND (\"char_length\"(\"portone_channel_key\") <= 200)) AND (\"portone_version\" = 'V2'::\"text\") AND (\"portone_channel_type\" = ANY (ARRAY['TEST'::\"text\", 'LIVE'::\"text\"])) AND (\"payment_method_type\" IS NOT NULL) AND (\"payment_method_type\" = ANY (ARRAY['CARD'::\"text\", 'EASY_PAY'::\"text\"])) AND (\"balance_amount_krw\" >= 0)))),",
+          "    CONSTRAINT \"commerce_payments_portone_fields\" CHECK (((\"provider\" <> 'portone'::\"text\") OR ((\"char_length\"(\"portone_payment_id\") >= 6) AND (\"char_length\"(\"portone_payment_id\") <= 200) AND ((\"char_length\"(\"portone_store_id\") >= 6) AND (\"char_length\"(\"portone_store_id\") <= 200)) AND ((\"char_length\"(\"portone_channel_key\") >= 6) AND (\"char_length\"(\"portone_channel_key\") <= 200)) AND (\"portone_version\" = 'V2'::\"text\") AND (\"portone_channel_type\" = ANY (ARRAY['TEST'::\"text\", 'LIVE'::\"text\"])) AND (\"payment_method_type\" IS NOT NULL) AND (\"payment_method_type\" = ANY (ARRAY['CARD'::\"text\", 'EASY_PAY'::\"text\"])) AND (\"balance_amount_krw\" >= 0)))),"
+        ]
+      }
+    ],
+    "authFactorType": ["totp", "webauthn", "phone", "recovery_code"]
+  },
+  "historicalRepairVersions": [
+    "20260918000000",
+    "20260918010000",
+    "20260919000000",
+    "20260919010000",
+    "20260919020000",
+    "20260919030000",
+    "20260919040000",
+    "20260919050000",
+    "20260919060000",
+    "20260919135013",
+    "20260919165358",
+    "20260919224714",
+    "20260920060949",
+    "20260920085650",
+    "20260920095057",
+    "20260920104030",
+    "20260920110649",
+    "20260920111743",
+    "20260921020848",
+    "20260921070000",
+    "20260921070944"
+  ],
+  "compatibilityCandidateVersions": [
+    "20260921102516",
+    "20260921110000",
+    "20260921132018",
+    "20260921133000",
+    "20260921133500"
+  ]
+}

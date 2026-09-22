@@ -5,6 +5,10 @@ const ITEM_PATTERN = /^throwable_[a-z0-9_]{1,60}$/;
 const WIRE_ITEM_PATTERN = /^(0|[1-9][0-9]{0,5})$/;
 const MAX_ACTIVE_SESSIONS = 16;
 const MAX_SOURCE_SESSIONS = 128;
+const ROLLOUT_PROTOCOL_VERSION = 2;
+const ROLLOUT_CONTRACT_HASH =
+  "3c836b40cfc44437e9d069b84787cd3d8793026ce40de46d82b9ece79127b7e5";
+const MAX_ROLLOUT_LEASE_MS = 300_000;
 
 class SupabaseBridgeError extends Error {
   constructor(code, {permanent = false, status = 0} = {}) {
@@ -34,6 +38,18 @@ function publishableConfig(config) {
     throw new SupabaseBridgeError("supabase_publishable_key_invalid");
   }
   return {...normalized, publishableKey: config.publishableKey};
+}
+
+function serviceHeaders(serviceRoleKey) {
+  const headers = {apikey: serviceRoleKey};
+  // New Supabase secret keys are opaque API keys, not JWTs. Sending one as a
+  // Bearer credential makes downstream JWT handling ambiguous and is
+  // explicitly unsupported. Preserve legacy service_role JWT compatibility
+  // while production migrates to the scoped secret key.
+  if (!serviceRoleKey.startsWith("sb_secret_")) {
+    headers.authorization = `Bearer ${serviceRoleKey}`;
+  }
+  return headers;
 }
 
 async function responseJson(response, code) {
@@ -91,8 +107,7 @@ async function accessRpc(config, name, args, fetchImpl = fetch) {
     response = await fetchImpl(`${url}/rest/v1/rpc/${name}`, {
       method: "POST",
       headers: {
-        apikey: serviceRoleKey,
-        authorization: `Bearer ${serviceRoleKey}`,
+        ...serviceHeaders(serviceRoleKey),
         "content-type": "application/json",
       },
       body: JSON.stringify(args),
@@ -160,6 +175,35 @@ async function getRealtimeAccess(config, userId, fetchImpl = fetch) {
   );
 }
 
+async function getRealtimeBootstrapAuthorization(
+    config, userId, sessionId, fetchImpl = fetch, now = Date.now()) {
+  if (!UUID_PATTERN.test(userId || "") || !UUID_PATTERN.test(sessionId || "") ||
+      !Number.isSafeInteger(now) || now <= 0) {
+    throw new SupabaseBridgeError("authentication_required", {permanent: true});
+  }
+  const payload = await accessRpc(config, "firebase_realtime_bootstrap_authorization", {
+    p_user_id: userId,
+    p_session_id: sessionId,
+  }, fetchImpl);
+  if (payload?.allowed !== true) {
+    throw new SupabaseBridgeError("realtime_rollout_disabled", {permanent: true});
+  }
+  if (
+    payload.protocolVersion !== ROLLOUT_PROTOCOL_VERSION ||
+    payload.contractHash !== ROLLOUT_CONTRACT_HASH ||
+    !Number.isSafeInteger(payload.leaseExpiresAt) ||
+    payload.leaseExpiresAt <= now ||
+    payload.leaseExpiresAt > now + MAX_ROLLOUT_LEASE_MS + 5_000
+  ) {
+    throw new SupabaseBridgeError("realtime_rollout_invalid");
+  }
+  return {
+    leaseExpiresAt: payload.leaseExpiresAt,
+    protocolVersion: payload.protocolVersion,
+    contractHash: payload.contractHash,
+  };
+}
+
 async function persistRealtimeMessage(config, command, fetchImpl = fetch) {
   const {url, serviceRoleKey} = normalizeConfig(config);
   let response;
@@ -167,8 +211,7 @@ async function persistRealtimeMessage(config, command, fetchImpl = fetch) {
     response = await fetchImpl(`${url}/rest/v1/rpc/firebase_persist_realtime_message`, {
       method: "POST",
       headers: {
-        apikey: serviceRoleKey,
-        authorization: `Bearer ${serviceRoleKey}`,
+        ...serviceHeaders(serviceRoleKey),
         "content-type": "application/json",
       },
       body: JSON.stringify({
@@ -200,8 +243,13 @@ module.exports = {
   accessRpc,
   parseAccessSnapshot,
   getRealtimeAccess,
+  getRealtimeBootstrapAuthorization,
   MAX_ACTIVE_SESSIONS,
   MAX_SOURCE_SESSIONS,
+  MAX_ROLLOUT_LEASE_MS,
+  ROLLOUT_CONTRACT_HASH,
+  ROLLOUT_PROTOCOL_VERSION,
+  serviceHeaders,
   persistRealtimeMessage,
   verifySupabaseUser,
 };

@@ -1,0 +1,412 @@
+{
+  "schemaVersion": 1,
+  "projectRef": "whtejsviizgejauasqqt",
+  "productionCurrent": [
+    {
+      "version": "20260829000000",
+      "name": "sidey_core",
+      "filename": "20260829000000_sidey_core.sql",
+      "sha256": "e8ee09c9fd9a71e3ae9eb7a2d697d10f3b24d8bc23112a2cd906e3b8d36688b4"
+    },
+    {
+      "version": "20260829001000",
+      "name": "sidey_realtime_authorization",
+      "filename": "20260829001000_sidey_realtime_authorization.sql",
+      "sha256": "a3d0c344ada5b88e904e81ba8d9be0b1f2b798acb5faf8e1b20184e396fc6869"
+    },
+    {
+      "version": "20260831010000",
+      "name": "limit_profile_nickname_to_eight",
+      "filename": "20260831010000_limit_profile_nickname_to_eight.sql",
+      "sha256": "103f67de657be9d8664e20392d51f4bd991449b9adafde2992fb506f91aa0bbc"
+    },
+    {
+      "version": "20260831020000",
+      "name": "delete_room",
+      "filename": "20260831020000_delete_room.sql",
+      "sha256": "911aaa7e0e900d603ecdb293f237ad692ea4ac10e9d347981051ca1c0625251e"
+    },
+    {
+      "version": "20260831030000",
+      "name": "expand_room_capacity_and_reduce_message_retention",
+      "filename": "20260831030000_expand_room_capacity_and_reduce_message_retention.sql",
+      "sha256": "54c66500ed635e938bbabee2969798ecea61bbf357567d3e07c8abdffa8d5847"
+    },
+    {
+      "version": "20260901000000",
+      "name": "security_hardening",
+      "filename": "20260901000000_security_hardening.sql",
+      "sha256": "e67b3586b9fa593cac303ee60981014ada1345dad824733ee263fa3d95a02a01"
+    },
+    {
+      "version": "20260901010000",
+      "name": "starlight_upalupa_commerce",
+      "filename": "20260901010000_starlight_upalupa_commerce.sql",
+      "sha256": "a08466e714868795ee8c1ed1006343130d871dda70356795f80d579242036784"
+    },
+    {
+      "version": "20260902000000",
+      "name": "commerce_policy_consent_and_refunds",
+      "filename": "20260902000000_commerce_policy_consent_and_refunds.sql",
+      "sha256": "174c42aef234f6d01dbdf92b6d8ed3f989234cd1db4067aa9773f7592f66c6d5"
+    },
+    {
+      "version": "20260902010000",
+      "name": "commerce_smoke_refund_audit",
+      "filename": "20260902010000_commerce_smoke_refund_audit.sql",
+      "sha256": "553e3a5ba75b1260be0b711f440a11a497a7f07d5857fa59f8fa9392e522f4ad"
+    },
+    {
+      "version": "20260902020000",
+      "name": "commerce_policy_copy_v2",
+      "filename": "20260902020000_commerce_policy_copy_v2.sql",
+      "sha256": "8379ca3080d096a86317897ccbef2d6934f0d553c78f45495c4e72d08f051034"
+    },
+    {
+      "version": "20260902030000",
+      "name": "add_free_pixel_characters",
+      "filename": "20260902030000_add_free_pixel_characters.sql",
+      "sha256": "246549e2b485c1ccb89854d955b9d8df27eb25dfe739ecc9a808a2bfd6afa685"
+    },
+    {
+      "version": "20260902040000",
+      "name": "rename_pixel_koala_to_chinchilla",
+      "filename": "20260902040000_rename_pixel_koala_to_chinchilla.sql",
+      "sha256": "5a9e1f08f57b588b33e57ca29dadbd05f618a9b274746b63d97ceca2e1e71358"
+    },
+    {
+      "version": "20260902050000",
+      "name": "paid_characters_portone_v2",
+      "filename": "20260902050000_paid_characters_portone_v2.sql",
+      "sha256": "ec9e35c20a409665c930176cdd877af55b78a24155974b4abf9be685b3c8c65c"
+    },
+    {
+      "version": "20260903000000",
+      "name": "commerce_refund_policy_v2",
+      "filename": "20260903000000_commerce_refund_policy_v2.sql",
+      "sha256": "6462aae6023b9496957185e0fac94c3021d1e09383a0b2ccee3835285c368867"
+    },
+    {
+      "version": "20260903010000",
+      "name": "admin_observability",
+      "filename": "20260903010000_admin_observability.sql",
+      "sha256": "3db40561eb80f10d188aa019730b702d8cdba549fa79264249000bc8d9d7d1f4"
+    },
+    {
+      "version": "20260903020000",
+      "name": "character_throw",
+      "filename": "20260903020000_character_throw.sql",
+      "sha256": "263da96168b7ea39ab58799a8ea33fd66b79ad756dbc45a073ea6f5cbc448631"
+    },
+    {
+      "version": "20260903030000",
+      "name": "admin_download_period_baseline",
+      "filename": "20260903030000_admin_download_period_baseline.sql",
+      "sha256": "081140acc48df4f46a01f737a1ab7c4aa25d59393e0bd549365f1a0ea79320c3"
+    },
+    {
+      "version": "20260903040000",
+      "name": "admin_download_kst_boundary",
+      "filename": "20260903040000_admin_download_kst_boundary.sql",
+      "sha256": "476c43322873aa3e53cf3659177514c2975e20ec7742fdbb4c9cd30d73ef7213"
+    },
+    {
+      "version": "20260904000000",
+      "name": "app_store_foundation",
+      "filename": "20260904000000_app_store_foundation.sql",
+      "sha256": "6e444c7f14df495715aba8e0677e8df9859e1446db5c3fc39c127c75523006e6"
+    },
+    {
+      "version": "20260904010000",
+      "name": "non_retryable_stale_realtime_epoch",
+      "filename": "20260904010000_non_retryable_stale_realtime_epoch.sql",
+      "sha256": "e3a7cd9239bdbef78f52f80f066be1b2869061da5a3992a28b73df9aadb0f866"
+    },
+    {
+      "version": "20260905000000",
+      "name": "cosmetics_catalog_and_equipment",
+      "filename": "20260905000000_cosmetics_catalog_and_equipment.sql",
+      "sha256": "7c0c07a0cb7e32b2516a51ecdca9fe9bfc25311a47890e60f4bda60e70208db6"
+    },
+    {
+      "version": "20260905010000",
+      "name": "settings_retention_contract",
+      "filename": "20260905010000_settings_retention_contract.sql",
+      "sha256": "9f2ef7f63be65a4f3c3cd60a1816bcaed7118bc1ed5ff474795732115e65ef96"
+    },
+    {
+      "version": "20260905020000",
+      "name": "store_state_equipment_nullability",
+      "filename": "20260905020000_store_state_equipment_nullability.sql",
+      "sha256": "89859cdce0809b9a11fd5b2fa1c5329712e890c32f707e4efcdf362e3314f452"
+    },
+    {
+      "version": "20260906000000",
+      "name": "app_store_cosmetics",
+      "filename": "20260906000000_app_store_cosmetics.sql",
+      "sha256": "10968e26711169b729e81b11786537ea53d812bf3a90efbfaa3dc5262a87b3a5"
+    },
+    {
+      "version": "20260911000000",
+      "name": "otter_pig_tree_catalog",
+      "filename": "20260911000000_otter_pig_tree_catalog.sql",
+      "sha256": "8df077aabb084ff16321f241fdaaee0b9743b7ce834fc6c166524a27e412b473"
+    },
+    {
+      "version": "20260912000000",
+      "name": "character_keepsakes",
+      "filename": "20260912000000_character_keepsakes.sql",
+      "sha256": "e8403982282fb56f3184e72a16198cca5543aff47335cedfe27e04ac2fb722e7"
+    },
+    {
+      "version": "20260912010000",
+      "name": "keepsake_descriptions",
+      "filename": "20260912010000_keepsake_descriptions.sql",
+      "sha256": "d7f939aef81f739ddc98a8f91e91877b6a29686877f8d01dfab7aa89ac133724"
+    },
+    {
+      "version": "20260912020000",
+      "name": "tree_app_store_offer",
+      "filename": "20260912020000_tree_app_store_offer.sql",
+      "sha256": "dd60e4436bd10f512bb979b65e551f69ce913e667732e3994b639ec6687c34fd"
+    },
+    {
+      "version": "20260912030000",
+      "name": "remaining_app_store_offers",
+      "filename": "20260912030000_remaining_app_store_offers.sql",
+      "sha256": "c12cfd7ca37675416524fcecc13d6332375d0eaad23eeaf28ced932ec69438fb"
+    },
+    {
+      "version": "20260912040000",
+      "name": "character_store_stories",
+      "filename": "20260912040000_character_store_stories.sql",
+      "sha256": "2b152a386a66d9302051f4b705e9bac73a664d08f89586ecb8e5c2e0a3efbc51"
+    },
+    {
+      "version": "20260912050000",
+      "name": "monkey_app_store_offer_retry",
+      "filename": "20260912050000_monkey_app_store_offer_retry.sql",
+      "sha256": "3e2facd2037a6560b38e1fff3e38845a50ba3a199e903556c6b523613a604992"
+    },
+    {
+      "version": "20260912123000",
+      "name": "restore_monkey_second_app_store_offer",
+      "filename": "20260912123000_restore_monkey_second_app_store_offer.sql",
+      "sha256": "05d0ba082d7a00f379e37f6c8d8035db7c0074a8ded8f411ffb13c29d54b58c8"
+    },
+    {
+      "version": "20260912130000",
+      "name": "monkey_fourth_app_store_offer",
+      "filename": "20260912130000_monkey_fourth_app_store_offer.sql",
+      "sha256": "2c1fdf4a8e94b35c85db0baf5fb83785f815b3f8130d7124d7dd205966f3d786"
+    },
+    {
+      "version": "20260915000000",
+      "name": "admin_app_store_revenue",
+      "filename": "20260915000000_admin_app_store_revenue.sql",
+      "sha256": "c84a061a2457882f84eeb6bbfb147bf42ff4935ca224887390352096970f739f"
+    },
+    {
+      "version": "20260915100000",
+      "name": "tree_movement_profile_state",
+      "filename": "20260915100000_tree_movement_profile_state.sql",
+      "sha256": "b5adc958368c091a49aa027582f2366540f975a0ab97c8ea444cb176dc936a6d"
+    },
+    {
+      "version": "20260915200000",
+      "name": "content_catalog_and_prices",
+      "filename": "20260915200000_content_catalog_and_prices.sql",
+      "sha256": "b0c5cf5dc5dcf3cbfac6a10edc468e24801451b9256b2f220cd1868afd82905e"
+    },
+    {
+      "version": "20260916000000",
+      "name": "starlight_upalupa_price",
+      "filename": "20260916000000_starlight_upalupa_price.sql",
+      "sha256": "0dd529ec15cc95355e9bfb3871d6ddb3b5574d6336c53c35e35320a8e12f092f"
+    },
+    {
+      "version": "20260919151111",
+      "name": "support_portone_card",
+      "filename": "20260919151111_support_portone_card.sql",
+      "sha256": "c0f0b51ddc6e11121c0645b018d10084ba80c9a1a583763524e9df6576bbdffa"
+    },
+    {
+      "version": "20260920125342",
+      "name": "admin_payments_summary",
+      "filename": "20260920125342_admin_payments_summary.sql",
+      "sha256": "350f5214cbea851ba5707da2ac8a2515d2c1c77f11e8607501fe0d83343b96a2"
+    },
+    {
+      "version": "20260921024931",
+      "name": "admin_payment_summary_concurrent_indexes",
+      "filename": "20260921024931_admin_payment_summary_concurrent_indexes.sql",
+      "sha256": "8ba476b2aeb89aad1f1d518f05569977b7ce28546d21f6acc0a4d345bef08a9b"
+    },
+    {
+      "version": "20260921025140",
+      "name": "admin_payment_summary_web_index",
+      "filename": "20260921025140_admin_payment_summary_web_index.sql",
+      "sha256": "52ac806ab17ce8d2daa7795e233f9cf8016293e26da7cd6a083a86b5ac3aa114"
+    }
+  ],
+  "firebaseHistoricalRepairAllowlist": [
+    {
+      "version": "20260918000000",
+      "name": "firebase_shadow_foundation",
+      "filename": "20260918000000_firebase_shadow_foundation.sql",
+      "sha256": "f08087c060a30449ddc6921c0e05147c702cc90bc983afe8b76ac8f3ad2c5eee"
+    },
+    {
+      "version": "20260918010000",
+      "name": "firebase_live_transport",
+      "filename": "20260918010000_firebase_live_transport.sql",
+      "sha256": "ce77195fc33d23a6e9e48ec65d73825b05d07dac790ecb0d85c11de238ab6bea"
+    },
+    {
+      "version": "20260919000000",
+      "name": "firebase_live_edge_dispatch",
+      "filename": "20260919000000_firebase_live_edge_dispatch.sql",
+      "sha256": "a936e9d1b7d92a082977ad9787a5f81f222a3c877cce8c52f28b6b4f50167533"
+    },
+    {
+      "version": "20260919010000",
+      "name": "firebase_live_fast_dispatch",
+      "filename": "20260919010000_firebase_live_fast_dispatch.sql",
+      "sha256": "63debe9cc2a7c315bbb585188874a7072c1b7eb552bbed60b6f47abe1c9d9cc5"
+    },
+    {
+      "version": "20260919020000",
+      "name": "firebase_direct_events",
+      "filename": "20260919020000_firebase_direct_events.sql",
+      "sha256": "de121619dd9fffd3ce4a681140b5e210844b9e90819015c7d83d9fee5716d6d5"
+    },
+    {
+      "version": "20260919030000",
+      "name": "firebase_publisher_pipeline",
+      "filename": "20260919030000_firebase_publisher_pipeline.sql",
+      "sha256": "de0cff86ed56a2035a1bfd9687f5a3596d18c7aa2d080a4c4a8f7ef388524392"
+    },
+    {
+      "version": "20260919040000",
+      "name": "firebase_publish_wake",
+      "filename": "20260919040000_firebase_publish_wake.sql",
+      "sha256": "51fbae1f6c607f47b0f04ebc95db0751e75ed98f0db119d3b67908345b9ef881"
+    },
+    {
+      "version": "20260919050000",
+      "name": "firebase_edge_region",
+      "filename": "20260919050000_firebase_edge_region.sql",
+      "sha256": "1c3e0faa6449206efecaa09c47826c3a832cd8dbcb782967e732313c62360a1f"
+    },
+    {
+      "version": "20260919060000",
+      "name": "firebase_publisher_ack_claim",
+      "filename": "20260919060000_firebase_publisher_ack_claim.sql",
+      "sha256": "4107b3bcb3c769c9462ee933d02ee341b4a5b2d91a349e480b83be4b3462fae1"
+    },
+    {
+      "version": "20260919135013",
+      "name": "firebase_chat_bridge",
+      "filename": "20260919135013_firebase_chat_bridge.sql",
+      "sha256": "74eb4536e97127430714c88929616d09176fc7f3e51798e53db3d8141e299469"
+    },
+    {
+      "version": "20260919165358",
+      "name": "firebase_event_driven_access",
+      "filename": "20260919165358_firebase_event_driven_access.sql",
+      "sha256": "f8201efb3a81f700c28bb6f1ae91be79c682be984333cf5bda18c047f7fe4c14"
+    },
+    {
+      "version": "20260919224714",
+      "name": "firebase_access_failure_isolation",
+      "filename": "20260919224714_firebase_access_failure_isolation.sql",
+      "sha256": "b87447f1acbb748ead5c28df86fcd65e4fbf37e20e907f7e39a0887752ee68a4"
+    },
+    {
+      "version": "20260920060949",
+      "name": "firebase_room_revision_outbox",
+      "filename": "20260920060949_firebase_room_revision_outbox.sql",
+      "sha256": "d0e4cf87bfd97c0851bbbff91b577b65776dbe174a62dc87cebbd86b408153a8"
+    },
+    {
+      "version": "20260920085650",
+      "name": "firebase_presence_inbox_delivery",
+      "filename": "20260920085650_firebase_presence_inbox_delivery.sql",
+      "sha256": "4fdc5b3f3c61e7b441ebad7e46ad10d5499f04f95a78d89a1f3ecfb05b58fb2e"
+    },
+    {
+      "version": "20260920095057",
+      "name": "firebase_presence_revocation_and_revision_fence",
+      "filename": "20260920095057_firebase_presence_revocation_and_revision_fence.sql",
+      "sha256": "4d6d08dc39f6e4e0fd5544de0f0b9894fc229fb761dede1eb4fe0b837a7f4e77"
+    },
+    {
+      "version": "20260920104030",
+      "name": "firebase_v2_compact_throw_chat_publish",
+      "filename": "20260920104030_firebase_v2_compact_throw_chat_publish.sql",
+      "sha256": "231a860d7c39cc67c3fcfc1033207d9420bbe4ccbf9a68e828414613cf845a54"
+    },
+    {
+      "version": "20260920110649",
+      "name": "firebase_wake_header",
+      "filename": "20260920110649_firebase_wake_header.sql",
+      "sha256": "0970ec6523f8c599f33efe61700cd243a675132bbca25fc26b734240f6d5bf9f"
+    },
+    {
+      "version": "20260920111743",
+      "name": "firebase_chat_outbox_compaction",
+      "filename": "20260920111743_firebase_chat_outbox_compaction.sql",
+      "sha256": "d3217c8147395a38051def88d56635a28af9432a2c0d343f2af7ec2348a3506b"
+    },
+    {
+      "version": "20260921020848",
+      "name": "firebase_live_lease_one_hour",
+      "filename": "20260921020848_firebase_live_lease_one_hour.sql",
+      "sha256": "36078ce8af7d1c36e87ba60c3106a483ae452327651314fd9aebd795f268cc41"
+    },
+    {
+      "version": "20260921070000",
+      "name": "firebase_delivery_status",
+      "filename": "20260921070000_firebase_delivery_status.sql",
+      "sha256": "0f9b2a925cfe9c05c4b53dfbbabf09178f95eac639f27c9ab637b3efe7f04372"
+    },
+    {
+      "version": "20260921070944",
+      "name": "firebase_access_delivery_snapshot",
+      "filename": "20260921070944_firebase_access_delivery_snapshot.sql",
+      "sha256": "21efb70e01e60de88c20758b51f8f2ca83172875dd2209718efd549eff57bb28"
+    }
+  ],
+  "firebaseCompatibilityCandidates": [
+    {
+      "version": "20260921102516",
+      "name": "firebase_production_compatibility",
+      "filename": "20260921102516_firebase_production_compatibility.sql",
+      "sha256": "74bab1b98be60c792633d884d54aee4ecdcec4ef104c80b0a296a7a1780c66c3"
+    },
+    {
+      "version": "20260921110000",
+      "name": "firebase_wire_code_contract",
+      "filename": "20260921110000_firebase_wire_code_contract.sql",
+      "sha256": "8612e48d5332aa771ae44a3d420556430a4b11c546514aa2d319e7dd94c9ec74"
+    },
+    {
+      "version": "20260921132018",
+      "name": "firebase_mixed_version_supabase_bridge",
+      "filename": "20260921132018_firebase_mixed_version_supabase_bridge.sql",
+      "sha256": "3a81cabe31573076da5d59e06131cf8cb079101269a8ae87bd5950f624d8c1ba"
+    },
+    {
+      "version": "20260921133000",
+      "name": "firebase_client_rollout_selector",
+      "filename": "20260921133000_firebase_client_rollout_selector.sql",
+      "sha256": "f2f96bd049467694f30696c5e3dc879cb1e4030c2e4cfc574aef99724cf80fd3"
+    },
+    {
+      "version": "20260921133500",
+      "name": "legacy_send_message_response_contract",
+      "filename": "20260921133500_legacy_send_message_response_contract.sql",
+      "sha256": "9fbc7f74e4a8be579447284e30ccbeb377481e794385ab1ea64c795af2c6849a"
+    }
+  ]
+}

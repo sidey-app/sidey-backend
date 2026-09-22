@@ -953,7 +953,8 @@ try {
       metrics.wakeDeploymentBefore = edgeDeploymentMetadata(deployed, undefined, 'realtime-event');
     }
     check(originalSecrets.has('SIDEY_FIREBASE_LIVE_PUBLISH_SECRET'), 'edge_publisher_secret_missing');
-    edgePublisher = new StagingEdgeSession({ runId, query, sleep: ms => delay(ms), directEvents: options.directEvents === true, edgeRegion: options.edgeRegion ?? null });
+    edgePublisher = new StagingEdgeSession({ runId, query, sleep: ms => delay(ms), directEvents: options.directEvents === true,
+      edgeRegion: options.edgeRegion ?? null, projectRef: ref });
     metrics.edgeBaseline = await edgePublisher.preflight();
   }
   // Establish provenance and connectivity before creating any synthetic users.

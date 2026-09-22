@@ -20,8 +20,11 @@ const sessionA = "50000000-0000-4000-8000-000000000001";
 const sessionB = "50000000-0000-4000-8000-000000000002";
 let testEnv;
 
-function client(userId, sessionId = sessionA) {
-  return testEnv.authenticatedContext(userId, {sideySessionId: sessionId}).database();
+function client(userId, sessionId = sessionA, rolloutUntil = Date.now() + 300_000) {
+  return testEnv.authenticatedContext(userId, {
+    sideySessionId: sessionId,
+    sideyRolloutUntil: rolloutUntil,
+  }).database();
 }
 
 async function adminSet(targetPath, value) {
@@ -49,6 +52,7 @@ test.beforeEach(async () => {
   await testEnv.clearDatabase();
   const expiresAt = Date.now() + 3_600_000;
   await adminSet("v2/a", {
+    g: {e: true},
     s: {v: Date.now() + 120_000},
     u: {
       [memberId]: {
@@ -62,28 +66,30 @@ test.beforeEach(async () => {
   });
 });
 
-test("compact live path permits only the caller's bounded session slot", async () => {
+test("compatibility mode denies every client typing slot write", async () => {
   const dbA = client(memberId, sessionA);
   const dbB = client(memberId, sessionB);
   const aPath = `v2/l/${roomId}/t/${memberId}/${sessionA}`;
   const bPath = `v2/l/${roomId}/t/${memberId}/${sessionB}`;
 
-  await assertSucceeds(set(ref(dbA, aPath), Date.now()));
-  await assertSucceeds(set(ref(dbB, bPath), Date.now()));
+  await assertFails(set(ref(dbA, aPath), Date.now()));
+  await assertFails(set(ref(dbB, bPath), Date.now()));
   await assertFails(set(ref(dbA, bPath), Date.now()));
   await assertFails(set(ref(dbA, `v2/l/${roomId}/t/${memberId}/arbitrary-slot`), Date.now()));
-  await assertSucceeds(remove(ref(dbA, aPath)));
-  await assertSucceeds(remove(ref(dbB, bPath)));
+  await adminSet(aPath, Date.now());
+  await adminSet(bPath, Date.now());
+  await assertFails(remove(ref(dbA, aPath)));
+  await assertFails(remove(ref(dbB, bPath)));
 });
 
-test("compact pulse and entitled throw accept only valid owner payloads", async () => {
+test("compatibility mode denies member pulse and throw writes", async () => {
   const db = client(memberId);
-  await assertSucceeds(set(ref(db, `v2/l/${roomId}/c/${memberId}`), Date.now()));
+  await assertFails(set(ref(db, `v2/l/${roomId}/c/${memberId}`), Date.now()));
   const throwPath = `v2/l/${roomId}/x/${memberId}`;
   const first = Date.now() - 600;
-  await assertSucceeds(set(ref(db, throwPath), {u: targetId, k: "7", t: first}));
+  await assertFails(set(ref(db, throwPath), {u: targetId, k: "7", t: first}));
   await assertFails(set(ref(db, throwPath), {u: targetId, k: "7", t: first + 499}));
-  await assertSucceeds(set(ref(db, throwPath), {u: targetId, k: "7", t: first + 500}));
+  await assertFails(set(ref(db, throwPath), {u: targetId, k: "7", t: first + 500}));
   await assertFails(set(ref(db, throwPath), {u: memberId, k: "7", t: Date.now()}));
   await assertFails(set(ref(db, throwPath), {u: outsiderId, k: "7", t: Date.now()}));
   await assertFails(set(ref(db, throwPath), {u: targetId, k: "8", t: Date.now()}));
@@ -151,13 +157,48 @@ test("kick revokes an existing listener and all new live access", async () => {
   }
 });
 
-test("typing owner can clean its exact session slot after membership or session revocation", async () => {
+test("emergency global kill immediately revokes existing listeners", async () => {
+  const db = client(memberId);
+  const livePath = `v2/l/${roomId}`;
+  await adminSet(`${livePath}/e`, {i: messageId, n: 1});
+  let ready;
+  const initial = new Promise((resolve) => { ready = resolve; });
+  let cancelled;
+  const cancellation = new Promise((resolve) => { cancelled = resolve; });
+  let observedAfterKill = false;
+  const unsubscribe = onValue(ref(db, livePath), (snapshot) => {
+    if (snapshot.val()?.e?.n === 2) observedAfterKill = true;
+    ready();
+  }, cancelled);
+  let timeout;
+  try {
+    await initial;
+    await adminSet("v2/a/g/e", false);
+    await adminSet(`${livePath}/e`, {i: messageId, n: 2});
+    const error = await Promise.race([
+      cancellation,
+      new Promise((_, reject) => {
+        timeout = setTimeout(() => reject(new Error("global_kill_not_immediate")), 5_000);
+      }),
+    ]);
+    assert.equal(error.code, "PERMISSION_DENIED");
+    assert.equal(observedAfterKill, false);
+    await assertFails(get(ref(db, livePath)));
+    await assertFails(get(ref(db, `v2/n/${memberId}`)));
+  } finally {
+    clearTimeout(timeout);
+    unsubscribe();
+  }
+});
+
+test("only server administration can create or clean compatibility transient slots", async () => {
   const dbA = client(memberId, sessionA);
   const typingPath = `v2/l/${roomId}/t/${memberId}/${sessionA}`;
-  await assertSucceeds(set(ref(dbA, typingPath), Date.now()));
+  await adminSet(typingPath, Date.now());
+  await assertFails(remove(ref(dbA, typingPath)));
   await adminSet(`v2/a/u/${memberId}/sessions/${sessionA}`, null);
   await assertFails(set(ref(dbA, typingPath), Date.now() + 1_500));
-  await assertSucceeds(remove(ref(dbA, typingPath)));
+  await assertFails(remove(ref(dbA, typingPath)));
   await assertFails(remove(ref(client(memberId, sessionB), typingPath)));
 });
 
@@ -165,7 +206,7 @@ test("revoking session A leaves session B usable; account suspension revokes bot
   await adminSet(`v2/a/u/${memberId}/sessions/${sessionA}`, null);
   await assertFails(get(ref(client(memberId, sessionA), `v2/n/${memberId}`)));
   await assertSucceeds(get(ref(client(memberId, sessionB), `v2/n/${memberId}`)));
-  await assertSucceeds(set(ref(client(memberId, sessionB), `v2/l/${roomId}/c/${memberId}`), Date.now()));
+  await assertFails(set(ref(client(memberId, sessionB), `v2/l/${roomId}/c/${memberId}`), Date.now()));
   await adminSet(`v2/a/u/${memberId}/active`, false);
   await assertFails(get(ref(client(memberId, sessionB), `v2/n/${memberId}`)));
   await assertFails(set(ref(client(memberId, sessionB), `v2/l/${roomId}/c/${memberId}`), Date.now()));
@@ -189,6 +230,8 @@ test("expired global health and unbound or expired sessions fail closed", async 
 
   await adminSet("v2/a/s/v", Date.now() + 120_000);
   await assertFails(get(ref(testEnv.authenticatedContext(memberId).database(), `v2/l/${roomId}`)));
+  await assertFails(get(ref(client(memberId, sessionA, Date.now() - 1), `v2/l/${roomId}`)));
+  await assertFails(get(ref(client(memberId, sessionA, Date.now() - 1), `v2/n/${memberId}`)));
   await adminSet(`v2/a/u/${memberId}/sessions/${sessionA}`, Date.now() - 1);
   await assertFails(get(ref(client(memberId), `v2/l/${roomId}`)));
 });

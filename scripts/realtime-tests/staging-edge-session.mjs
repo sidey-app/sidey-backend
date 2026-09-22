@@ -21,16 +21,19 @@ export function edgeCounters(value) {
 }
 
 export class StagingEdgeSession {
-  constructor({ runId, query, sleep, now = Date.now, directEvents = false, edgeRegion = null }) {
+  constructor({ runId, query, sleep, now = Date.now, directEvents = false, edgeRegion = null,
+    projectRef = 'fjglrvhvdthntkvrduyi' }) {
     if (!UUID.test(runId)) throw new Error('invalid_edge_run');
     if (typeof directEvents !== 'boolean') throw new Error('invalid_direct_events');
     if (edgeRegion !== null && !['ap-northeast-2', 'ap-southeast-1'].includes(edgeRegion)) throw new Error('invalid_edge_region');
-    Object.assign(this, { runId, query, sleep, now, directEvents, edgeRegion });
+    if (!/^[a-z]{20}$/.test(projectRef)) throw new Error('invalid_project_ref');
+    Object.assign(this, { runId, query, sleep, now, directEvents, edgeRegion, projectRef });
     this.mayBeRunning = false;
   }
   async preflight() {
     const [row] = await this.query(`select
       to_regprocedure('public.begin_claim_firebase_live_dispatch(uuid,integer)') is not null as pipeline_ready,
+      not exists(select 1 from private.firebase_live_dispatch_config where publisher_url is not null) as endpoint_off,
       not exists(select 1 from private.firebase_live_dispatch_config where edge_region is not null) as region_off,
       not exists(select 1 from private.firebase_live_config where direct_events_enabled) as direct_off,
       not exists(select 1 from private.firebase_live_cleanup_state where running or owner_run_id is not null) as cleanup_idle,
@@ -40,7 +43,7 @@ export class StagingEdgeSession {
       not exists(select 1 from cron.job where jobname='${JOB}') as cron_absent,
       (select count(*)=1 and bool_and(length(decrypted_secret)>=32) from vault.decrypted_secrets
         where name='sidey_firebase_live_publish_secret_staging') as secret_ready`);
-    if (!row || ['pipeline_ready', 'region_off', 'direct_off', 'cleanup_idle', 'fast_dispatch_ready', 'config_off', 'dispatch_idle', 'cron_absent', 'secret_ready']
+    if (!row || ['pipeline_ready', 'endpoint_off', 'region_off', 'direct_off', 'cleanup_idle', 'fast_dispatch_ready', 'config_off', 'dispatch_idle', 'cron_absent', 'secret_ready']
       .some(name => row[name] !== true)) throw new Error('edge_baseline_not_ready');
     return this.sample();
   }
@@ -51,7 +54,8 @@ export class StagingEdgeSession {
     await this.query(`begin;
       select id from private.firebase_live_dispatch_config where id=true for update;
       do $sidey_load$ begin
-        if not exists(select 1 from private.firebase_live_dispatch_config where id=true and not enabled and owner_run_id is null and edge_region is null)
+        if not exists(select 1 from private.firebase_live_dispatch_config where id=true and not enabled
+          and owner_run_id is null and edge_region is null and publisher_url is null)
           or exists(select 1 from private.firebase_live_dispatch_state where phase is not null)
           or exists(select 1 from private.firebase_live_cleanup_state where running or owner_run_id is not null)
           or exists(select 1 from private.firebase_live_config where direct_events_enabled)
@@ -61,6 +65,7 @@ export class StagingEdgeSession {
       end $sidey_load$;
       update private.firebase_live_dispatch_config set owner_run_id='${this.runId}',enabled=true,
         edge_region=${this.edgeRegion === null ? 'null' : `'${this.edgeRegion}'`},
+        publisher_url='https://${this.projectRef}.supabase.co/functions/v1/realtime-publish-live',
         run_deadline_at=clock_timestamp()+interval '60 minutes' where id=true;
       update private.firebase_live_config set direct_events_enabled=${this.directEvents};
       select cron.schedule('${JOB}','1 second','select private.dispatch_firebase_live();');
@@ -123,7 +128,7 @@ export class StagingEdgeSession {
         where owner_run_id='${this.runId}' and not running;
       update private.firebase_live_dispatch_state set phase=null,dispatch_id=null,expires_at='-infinity',owner_run_id=null
         where owner_run_id='${this.runId}' and phase is distinct from 'running';
-      update private.firebase_live_dispatch_config set owner_run_id=null,run_deadline_at=null,edge_region=null
+      update private.firebase_live_dispatch_config set owner_run_id=null,run_deadline_at=null,edge_region=null,publisher_url=null
         where owner_run_id='${this.runId}' and not enabled;
       commit;`);
     this.mayBeRunning = false;

@@ -7,15 +7,22 @@ branch: `shared/firebase-v2-production-rollout`
 Firebase runtime 배포 source commit: `223b8c4`
 최종 smoke source commit: `8633621`
 
+> Historical Gate 1 record. Supabase production M0와 현재 Firebase Functions/Rules publication 뒤의 client
+> 계약·revision·gate 상태는 `CLIENT_BACKEND_HANDOFF.md`를 따른다. 아래 revision/hash는 Gate 1 당시 증거다.
+
 ## 판정
 
 Firebase production Functions/Rules 배포, Supabase staging 전용 지원 migration, 10명 end-to-end smoke와 cleanup 후 외부 read-back을 완료했다. Gate 2 macOS client implementation/validation을 시작할 수 있다.
 
 이 판정은 Firebase production과 Supabase **staging** 조합에 한정한다. Supabase production migration, client 변경, public release, store upload는 수행하지 않았다.
 
+> 이 문서는 Gate 1 당시 배포 증거를 보존한다. 이후 추가된 bootstrap grant barrier,
+> `firebase/contract-v2.fixture.json`, `20260921102516_firebase_production_compatibility.sql`은 이 handoff의
+> deployed revision에 포함되지 않는다.
+
 ## deployed contract
 
-- machine-readable fixture: `firebase/contract-v2.fixture.json`
+- machine-readable fixture: `firebase/contract-v2.gate1-deployed.fixture.json`
 - fixture SHA-256: `4785705721e971ae463a5692bc80cadc7ff49ed0e20aab495dc1b0d6be0619d0`
 - local Rules raw SHA-256: `46992380013bf1526532527e8680d09d412d5a2ae97017245bfbc50bb4e392e0`
 - local/remote Rules canonical SHA-256: `2bc71cbc8a6823816ce84d701be7ebc791319d291f7c13abd5544f047ed0d622` — exact match
@@ -175,4 +182,4 @@ Firebase rollback은 exact 이전 Functions source를 `functions:sidey-v2`에 �
 | cost | `minInstances=0`, worker max 1, 사용자별 scheduler 없음; 3,000 동접 부하는 미검증 |
 | cleanup | 이번 smoke exact residual 0; 기존 staging tombstone 72건 별도 debt |
 | rollback | durable artifact 보존, 실행 미검증 |
-| 다음 gate | Gate 2 macOS client implementation/validation. production Supabase와 release는 별도 승인 필요 |
+| 다음 gate | client interface/fake 병행 가능. production M0는 3,000×600초 부하와 production-shaped rehearsal 및 별도 승인 필요 |

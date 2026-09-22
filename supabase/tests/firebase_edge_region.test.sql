@@ -14,6 +14,8 @@ select throws_ok($$update private.firebase_live_dispatch_config set edge_region=
 -- pg_net dispatches only after commit. These real queue records and headers are
 -- inspected inside this rollback-only transaction; no external HTTP is sent.
 create temporary table region_requests(label text,request_id bigint);
+update private.firebase_live_dispatch_config
+set publisher_url='https://fjglrvhvdthntkvrduyi.supabase.co/functions/v1/realtime-publish-live';
 insert into region_requests values('default',private.enqueue_firebase_live_dispatch('bc000000-0000-4000-8000-000000000001','synthetic-only-region-test'));
 select ok(not(select q.headers?'x-region' from net.http_request_queue q join region_requests r on r.request_id=q.id where r.label='default'),'default request has no routing override');
 update private.firebase_live_dispatch_config set edge_region='ap-southeast-1';
@@ -27,7 +29,7 @@ select ok((select bool_and(q.url='https://fjglrvhvdthntkvrduyi.supabase.co/funct
   and q.headers->>'Authorization'='Bearer synthetic-only-region-test'
   and q.headers->>'Content-Type'='application/json'
   and (convert_from(q.body,'UTF8')::jsonb-'dispatchId')='{}'::jsonb)
-  from net.http_request_queue q join region_requests r on r.request_id=q.id),'fixed staging URL, secret, method, body and timeout unchanged');
+  from net.http_request_queue q join region_requests r on r.request_id=q.id),'configured staging URL, secret, method, body and timeout are exact');
 
 insert into auth.users(id,instance_id,aud,role,raw_app_meta_data,raw_user_meta_data,is_anonymous,created_at,updated_at)
 values('bc100000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated',

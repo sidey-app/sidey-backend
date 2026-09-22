@@ -1,6 +1,6 @@
 # Firebase v2 비용·Presence 결정
 
-상태: **목표 결정 고정 / 배포 계약 미동결**
+상태: **Gate 1 계약 배포 완료 / production rollout·비용 승인 미완료**
 기준일: 2026-09-21
 
 ## 결정
@@ -15,9 +15,12 @@
 
 ## 현재 배포와의 차이
 
-2026-09-21에 내려받은 운영 Rules는 `/v2/rooms/{room}/presence` 쓰기를 허용한다. 이는 위 결정과 충돌한다. 같은 Rules에는 레거시 `/v2/rooms/{room}/typing|throws`와 `/v2/chat/*`도 남아 있다.
+Gate 0에서 내려받은 운영 Rules는 `/v2/rooms/{room}/presence`, legacy typing/throws와 `/v2/chat/*`를
+허용했다. Gate 1은 이를 제거하고 canonical `/v2/a`, `/v2/l`, `/v2/n` Rules를 production에 배포한 뒤
+canonical hash를 read-back했다.
 
-현재 private client main은 Firebase v2를 사용하지 않고 기존 Supabase RPC/Broadcast/Presence 계약을 사용한다. 따라서 레거시 RTDB 경로를 제거하기 전에 공개 클라이언트 미사용 증거와 staging 회귀 검증을 다시 고정해야 한다.
+현재 released client는 Firebase v2를 사용하지 않고 기존 Supabase RPC/Broadcast/Presence 계약을
+사용한다. Supabase production compatibility migration과 v2-capable client release는 아직 없다.
 
 ## 비용 검증 기준
 
@@ -26,4 +29,5 @@
 - p95/p99, backlog age, 실패율, RTDB 연결·다운로드, Edge/Functions 호출량을 함께 기록
 - 테스트 사용자·방·outbox·lease·RTDB 잔여 데이터가 0인지 사후 확인
 
-2,400 연결 시험은 39.735초에 backlog 상한을 넘겨 중단됐다. 이 실패를 3,000 연결 승인이나 비용 근거로 사용할 수 없다.
+10명 staging 기능 smoke와 cleanup은 PASS했다. 2,400 연결 시험은 39.735초에 backlog 상한을 넘겨
+중단됐다. 3,000 연결 600초 시험은 실행되지 않았으므로 production M0나 비용 승인 근거가 없다.

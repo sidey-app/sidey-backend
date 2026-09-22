@@ -9,6 +9,11 @@ const {onSchedule} = require("firebase-functions/v2/scheduler");
 const {HttpsError, onCall, onRequest} = require("firebase-functions/v2/https");
 const {applyAccessSnapshot, authorizedWake, synchronizeAccess} = require("./lib/access-sync");
 const {synchronizeRoomRevisions} = require("./lib/room-revision");
+const {BootstrapContractError, parseBootstrapRequest} = require("./lib/bootstrap-contract");
+const {
+  RealtimeGlobalGateError,
+  assertRealtimeGlobalEnabled,
+} = require("./lib/global-gate");
 const {
   RealtimeChatError,
   parseChatEvent,
@@ -19,6 +24,7 @@ const {
   SupabaseBridgeError,
   accessRpc,
   getRealtimeAccess,
+  getRealtimeBootstrapAuthorization,
   persistRealtimeMessage,
   verifySupabaseUser,
 } = require("./lib/supabase");
@@ -72,6 +78,7 @@ exports.bootstrapRealtime = onRequest(
       return;
     }
     try {
+      const {minimumAccessRevision} = parseBootstrapRequest(request.body);
       const config = supabaseConfig.value();
       if (
         typeof config.firebaseApiKey !== "string" ||
@@ -86,7 +93,16 @@ exports.bootstrapRealtime = onRequest(
         sendJson(response, 429, {error: "realtime_bootstrap_rate_limited"});
         return;
       }
+      // Emergency kill is a live Firebase-side gate. Unlike the five-minute
+      // cohort lease, it is checked on every bootstrap and never cached.
+      await assertRealtimeGlobalEnabled(database);
+      const rollout = await getRealtimeBootstrapAuthorization(
+        config, user.id, user.sessionId,
+      );
       const access = await getRealtimeAccess(config, user.id);
+      if (minimumAccessRevision !== null && access.revision < minimumAccessRevision) {
+        throw new BootstrapContractError("realtime_grant_not_converged");
+      }
       const mirrored = await applyAccessSnapshot(database, access);
       if (!mirrored?.active || !(mirrored.sessions?.[user.sessionId] > Date.now())) {
         throw new SupabaseBridgeError("authentication_required", {permanent: true});
@@ -95,7 +111,9 @@ exports.bootstrapRealtime = onRequest(
       const syncUntil = (await database.ref("/v2/a/s/v").get()).val();
       if (!(syncUntil > Date.now())) throw new SupabaseBridgeError("access_sync_unavailable");
       const customToken = await getAuth().createCustomToken(user.id, {
-        sideyProtocol: 2, sideySessionId: user.sessionId,
+        sideyProtocol: 2,
+        sideySessionId: user.sessionId,
+        sideyRolloutUntil: rollout.leaseExpiresAt,
       });
       sendJson(response, 200, {
         protocolVersion: 2,
@@ -104,21 +122,37 @@ exports.bootstrapRealtime = onRequest(
         customToken,
         permissionSync: "event-driven",
         authTokenLifetimeSeconds: 3600,
-        refreshAfter: null,
+        refreshAfter: Math.max(Date.now(), rollout.leaseExpiresAt - 30_000),
+        rolloutLeaseExpiresAt: rollout.leaseExpiresAt,
+        accessRevision: mirrored.revision,
         rooms: Object.keys(mirrored.rooms || {}),
+        wireItems: Object.keys(mirrored.wire_items || {}),
       });
     } catch (error) {
       const authenticationFailure =
         error instanceof SupabaseBridgeError && error.code === "authentication_required";
-      if (!authenticationFailure) {
+      const invalidArgument =
+        error instanceof BootstrapContractError && error.code === "invalid_argument";
+      const grantPending = error instanceof BootstrapContractError &&
+        error.code === "realtime_grant_not_converged";
+      const rolloutDisabled =
+        (error instanceof SupabaseBridgeError || error instanceof RealtimeGlobalGateError) &&
+        error.code === "realtime_rollout_disabled";
+      if (!authenticationFailure && !invalidArgument && !grantPending && !rolloutDisabled) {
         const code = error instanceof SupabaseBridgeError ? error.code :
           (typeof error?.code === "string" ? error.code : "bootstrap_failed");
         logger.error(`Firebase realtime bootstrap failed: ${code}`);
       }
+      const status = authenticationFailure ? 401 : invalidArgument ? 400 :
+        (grantPending || rolloutDisabled) ? 409 : 503;
+      const code = authenticationFailure ? "authentication_required" :
+        invalidArgument ? "invalid_argument" :
+          grantPending ? "realtime_grant_not_converged" :
+            rolloutDisabled ? "realtime_rollout_disabled" : "realtime_bootstrap_unavailable";
       sendJson(
         response,
-        authenticationFailure ? 401 : 503,
-        {error: authenticationFailure ? "authentication_required" : "realtime_bootstrap_unavailable"},
+        status,
+        {error: code},
       );
     }
   },
@@ -267,13 +301,17 @@ exports.retryRealtimeChat = onSchedule(
 );
 
 function callableError(error) {
-  const code = error instanceof RealtimeChatError || error instanceof SupabaseBridgeError
+  const code = error instanceof RealtimeChatError || error instanceof SupabaseBridgeError ||
+    error instanceof RealtimeGlobalGateError
     ? error.code
     : "realtime_chat_unavailable";
   if (code === "authentication_required") return new HttpsError("unauthenticated", code);
   if (code === "membership_required") return new HttpsError("permission-denied", code);
   if (code === "message_rate_limited") return new HttpsError("resource-exhausted", code);
   if (code === "message_id_conflict" || code === "message_sequence_exhausted") {
+    return new HttpsError("failed-precondition", code);
+  }
+  if (code === "realtime_rollout_disabled") {
     return new HttpsError("failed-precondition", code);
   }
   if (["invalid_argument", "invalid_message_body", "message_id_required"].includes(code)) {
@@ -296,6 +334,9 @@ exports.sendRealtimeChat = onCall(
   async (request) => {
     try {
       const command = parseRealtimeChatRequest(request.data, request.auth);
+      // The callable must observe emergency kill immediately even while the
+      // signed rollout lease in an existing Firebase ID token remains valid.
+      await assertRealtimeGlobalEnabled(getDatabase());
       const persisted = parseChatEvent(await persistRealtimeMessage(
         supabaseConfig.value(), command,
       ));
