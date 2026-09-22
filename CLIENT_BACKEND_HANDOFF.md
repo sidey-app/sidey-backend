@@ -126,8 +126,9 @@ throwable: throwable_bouncy_heart=1, throwable_toy_cannon=2,
 
 모든 function은 `ACTIVE`, `asia-southeast1`, Node.js 22, 256 MiB, `minInstances=0`이다.
 `SIDEY_SUPABASE_CONFIG`는 production opaque `sb_secret_`를 담은 Secret Manager version `3`을 참조한다.
-secret 값은 source, handoff, log 어디에도 저장하지 않았다. wake endpoint 세 개만
-`SIDEY_ACCESS_WAKE_TOKEN@1`을 추가로 참조한다.
+secret 값은 source, handoff, log 어디에도 저장하지 않았다. 기존 wake endpoint 세 개는
+`SIDEY_ACCESS_WAKE_TOKEN@1`을 참조하고, transient wake endpoint는 별도
+`SIDEY_TRANSIENT_WAKE_TOKEN`을 참조한다.
 
 | function | Cloud Run revision | source generation | Firebase hash |
 | --- | --- | ---: | --- |

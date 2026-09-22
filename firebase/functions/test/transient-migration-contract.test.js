@@ -14,6 +14,13 @@ const migration = fs.readFileSync(
 const productionMigration = fs.readFileSync(
   path.join(root, "supabase/production-migrations", migrationName), "utf8",
 );
+const wakeMigrationName = "20260922203000_firebase_transient_wake_secret.sql";
+const wakeMigration = fs.readFileSync(
+  path.join(root, "supabase/migrations", wakeMigrationName), "utf8",
+);
+const productionWakeMigration = fs.readFileSync(
+  path.join(root, "supabase/production-migrations", wakeMigrationName), "utf8",
+);
 const fixtureBytes = fs.readFileSync(path.join(root, "firebase/contract-v2.fixture.json"));
 const fixtureHash = crypto.createHash("sha256").update(fixtureBytes).digest("hex");
 
@@ -35,4 +42,11 @@ test("bridge migration keeps auth fences, loop isolation and bounded retention",
   assert.match(migration, /sidey-delete-firebase-transient-publications/);
   assert.match(migration, /create function private\.delete_expired_firebase_transient_bridge_events\(\)/);
   assert.match(migration, /sidey-delete-firebase-transient-bridge-events/);
+});
+
+test("transient wake uses a dedicated secret without rotating existing workers", () => {
+  assert.equal(wakeMigration, productionWakeMigration);
+  assert.match(wakeMigration, /name = 'sidey_transient_wake_token'/);
+  assert.doesNotMatch(wakeMigration, /name = 'sidey_access_wake_token'/);
+  assert.match(wakeMigration, /create or replace function private\.wake_firebase_transient_publication/);
 });

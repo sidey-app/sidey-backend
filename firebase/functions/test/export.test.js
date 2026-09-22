@@ -50,6 +50,10 @@ test("transient bridge exports bounded durable workers and three RTDB triggers",
   assert.equal(syncRealtimeTransients.__endpoint.maxInstances, 1);
   assert.equal(syncRealtimeTransients.__endpoint.concurrency, 1);
   assert.equal(syncRealtimeTransients.__endpoint.timeoutSeconds, 60);
+  assert.deepEqual(
+    syncRealtimeTransients.__endpoint.secretEnvironmentVariables.map((secret) => secret.key),
+    ["SIDEY_SUPABASE_CONFIG", "SIDEY_TRANSIENT_WAKE_TOKEN"],
+  );
   assert.equal(retryRealtimeTransients.__endpoint.scheduleTrigger.schedule, "every 1 minutes");
   for (const trigger of [bridgeRealtimeTyping, bridgeRealtimePulse, bridgeRealtimeThrow]) {
     assert.equal(trigger.__endpoint.platform, "gcfv2");
