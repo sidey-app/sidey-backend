@@ -5,6 +5,7 @@ const {getAuth} = require("firebase-admin/auth");
 const {getDatabase} = require("firebase-admin/database");
 const logger = require("firebase-functions/logger");
 const {defineJsonSecret, defineSecret} = require("firebase-functions/params");
+const {onValueWritten} = require("firebase-functions/v2/database");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
 const {HttpsError, onCall, onRequest} = require("firebase-functions/v2/https");
 const {applyAccessSnapshot, authorizedWake, synchronizeAccess} = require("./lib/access-sync");
@@ -20,6 +21,10 @@ const {
   parseRealtimeChatRequest,
   synchronizeRealtimeChat,
 } = require("./lib/realtime-chat");
+const {
+  bridgeClientTransient,
+  synchronizeTransientPublications,
+} = require("./lib/realtime-transients");
 const {
   SupabaseBridgeError,
   accessRpc,
@@ -298,6 +303,86 @@ exports.syncRealtimeChat = onRequest(
 exports.retryRealtimeChat = onSchedule(
   {...realtimeChatWorkerOptions, schedule: "every 1 minutes", retryCount: 0},
   runRealtimeChatWorker,
+);
+
+const transientWorkerOptions = {
+  region: "asia-southeast1", secrets: [supabaseConfig],
+  timeoutSeconds: 60, memory: "256MiB", minInstances: 0,
+  concurrency: 1, maxInstances: 1,
+};
+
+async function runTransientWorker() {
+  const result = await synchronizeTransientPublications({
+    database: getDatabase(),
+    config: supabaseConfig.value(),
+  });
+  if (result.failed) logger.error("Transient publication pending retries", result);
+  return result;
+}
+
+exports.syncRealtimeTransients = onRequest(
+  {...transientWorkerOptions, secrets: [supabaseConfig, accessWakeToken], cors: false},
+  async (request, response) => {
+    if (request.method !== "POST") return sendJson(response, 405, {error: "method_not_allowed"});
+    const credential = wakeCredential(request);
+    const presented = request.get("x-sidey-wake-token") ? `Bearer ${credential}` : credential;
+    if (!authorizedWake(presented, accessWakeToken.value())) {
+      return sendJson(response, 401, {error: "authentication_required"});
+    }
+    try {
+      const result = await runTransientWorker();
+      return sendJson(response, result.failed ? 503 : 200, result);
+    } catch {
+      logger.error("Transient publication failed");
+      return sendJson(response, 503, {error: "transient_publish_unavailable"});
+    }
+  },
+);
+
+exports.retryRealtimeTransients = onSchedule(
+  {...transientWorkerOptions, schedule: "every 1 minutes", retryCount: 0},
+  runTransientWorker,
+);
+
+const transientTriggerOptions = (ref) => ({
+  ref,
+  instance: "sidey",
+  region: "asia-southeast1",
+  secrets: [supabaseConfig],
+  timeoutSeconds: 30,
+  memory: "256MiB",
+  minInstances: 0,
+  concurrency: 20,
+  maxInstances: 20,
+  retry: true,
+});
+
+async function bridgeTransientWrite(event, family) {
+  try {
+    await bridgeClientTransient(event, family, supabaseConfig.value());
+  } catch (error) {
+    const code = typeof error?.code === "string" ? error.code : error?.message;
+    logger.error("Firebase transient bridge failed", {
+      code: typeof code === "string" && /^[a-z0-9_]{1,80}$/i.test(code) ?
+        code : "transient_bridge_failed",
+    });
+    throw error;
+  }
+}
+
+exports.bridgeRealtimeTyping = onValueWritten(
+  transientTriggerOptions("/v2/l/{roomId}/t/{uid}/{sessionId}"),
+  (event) => bridgeTransientWrite(event, "typing"),
+);
+
+exports.bridgeRealtimePulse = onValueWritten(
+  transientTriggerOptions("/v2/l/{roomId}/c/{uid}"),
+  (event) => bridgeTransientWrite(event, "pulse"),
+);
+
+exports.bridgeRealtimeThrow = onValueWritten(
+  transientTriggerOptions("/v2/l/{roomId}/x/{uid}"),
+  (event) => bridgeTransientWrite(event, "throw"),
 );
 
 function callableError(error) {

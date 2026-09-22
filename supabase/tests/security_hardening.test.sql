@@ -29,6 +29,9 @@ values
   ('10000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', '{"provider":"anonymous","providers":["anonymous"]}', '{}', true,
    now() - interval '8 days', now());
+insert into auth.sessions(id, user_id, created_at, updated_at)
+values ('13000000-0000-4000-8000-000000000001',
+        '10000000-0000-0000-0000-000000000001', now(), now());
 
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000001', true);
 select public.upsert_profile('방장', 'pixel_hamster');
@@ -145,6 +148,8 @@ select throws_like(
 );
 set local role postgres;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000001', true);
+select set_config('request.jwt.claims',
+  '{"sub":"10000000-0000-0000-0000-000000000001","session_id":"13000000-0000-4000-8000-000000000001"}', true);
 
 select ok(
   has_function_privilege(

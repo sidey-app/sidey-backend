@@ -17,6 +17,10 @@ values
    'authenticated', 'authenticated', '{"provider":"anonymous","providers":["anonymous"]}', '{}', true, now(), now()),
   ('61000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', '{"provider":"anonymous","providers":["anonymous"]}', '{}', true, now(), now());
+insert into auth.sessions(id, user_id, created_at, updated_at) values
+  ('63000000-0000-4000-8000-000000000001', '61000000-0000-0000-0000-000000000001', now(), now()),
+  ('63000000-0000-4000-8000-000000000002', '61000000-0000-0000-0000-000000000002', now(), now()),
+  ('63000000-0000-4000-8000-000000000003', '61000000-0000-0000-0000-000000000003', now(), now());
 
 select set_config('request.jwt.claim.sub', '61000000-0000-0000-0000-000000000001', true);
 select public.upsert_profile('던지는친구', 'pixel_penguin');
@@ -50,6 +54,7 @@ select ok(
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '', true);
+select set_config('request.jwt.claims', '{}', true);
 select throws_ok(
   $$select public.broadcast_character_throw(
       (select room_id from throw_room), 1,
@@ -60,6 +65,8 @@ select throws_ok(
 );
 
 select set_config('request.jwt.claim.sub', '61000000-0000-0000-0000-000000000001', true);
+select set_config('request.jwt.claims',
+  '{"sub":"61000000-0000-0000-0000-000000000001","session_id":"63000000-0000-4000-8000-000000000001"}', true);
 select throws_ok(
   $$select public.broadcast_character_throw(
       (select room_id from throw_room),
@@ -104,6 +111,8 @@ select throws_ok(
 );
 
 select set_config('request.jwt.claim.sub', '61000000-0000-0000-0000-000000000003', true);
+select set_config('request.jwt.claims',
+  '{"sub":"61000000-0000-0000-0000-000000000003","session_id":"63000000-0000-4000-8000-000000000003"}', true);
 select throws_ok(
   $$select public.broadcast_character_throw(
       (select room_id from throw_room),
@@ -115,6 +124,8 @@ select throws_ok(
 );
 
 select set_config('request.jwt.claim.sub', '61000000-0000-0000-0000-000000000001', true);
+select set_config('request.jwt.claims',
+  '{"sub":"61000000-0000-0000-0000-000000000001","session_id":"63000000-0000-4000-8000-000000000001"}', true);
 select lives_ok(
   $$select public.broadcast_character_throw(
       (select room_id from throw_room),
@@ -163,6 +174,8 @@ select '61000000-0000-0000-0000-000000000001',
 from generate_series(1, 20);
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '61000000-0000-0000-0000-000000000001', true);
+select set_config('request.jwt.claims',
+  '{"sub":"61000000-0000-0000-0000-000000000001","session_id":"63000000-0000-4000-8000-000000000001"}', true);
 select throws_ok(
   $$select public.broadcast_character_throw(
       (select room_id from throw_room),

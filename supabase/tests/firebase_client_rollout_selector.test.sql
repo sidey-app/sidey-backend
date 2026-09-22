@@ -129,7 +129,7 @@ select public.register_realtime_capability_v2(
   'macos',
   '2.0.0-100',
   2,
-  '3c836b40cfc44437e9d069b84787cd3d8793026ce40de46d82b9ece79127b7e5'
+  '0f2845d033df248b1745c6526c8c7100b8d8fa6839b45f28c73b1023053fce2e'
 ) as result;
 select is(
   (select result->>'transport' from disabled_selection),
@@ -202,7 +202,7 @@ select public.register_realtime_capability_v2(
   'macos',
   '2.0.0-100',
   2,
-  '3c836b40cfc44437e9d069b84787cd3d8793026ce40de46d82b9ece79127b7e5'
+  '0f2845d033df248b1745c6526c8c7100b8d8fa6839b45f28c73b1023053fce2e'
 ) as result;
 select is(
   (select result->>'enabled' from enabled_selection),

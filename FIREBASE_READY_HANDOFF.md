@@ -9,6 +9,9 @@ Firebase runtime 배포 source commit: `223b8c4`
 
 > Historical Gate 1 record. Supabase production M0와 현재 Firebase Functions/Rules publication 뒤의 client
 > 계약·revision·gate 상태는 `CLIENT_BACKEND_HANDOFF.md`를 따른다. 아래 revision/hash는 Gate 1 당시 증거다.
+> 2026-09-23 transient bridge source candidate는 이 historical 배포에 포함되지 않는다. 새 candidate hash는
+> `0f2845d033df248b1745c6526c8c7100b8d8fa6839b45f28c73b1023053fce2e`, 예상 Functions inventory는 14개이며
+> migration/Functions/Rules production read-back 전에는 배포 완료로 해석하면 안 된다.
 
 ## 판정
 

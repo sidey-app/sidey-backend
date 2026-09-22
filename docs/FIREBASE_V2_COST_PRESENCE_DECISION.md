@@ -1,7 +1,7 @@
 # Firebase v2 비용·Presence 결정
 
-상태: **Gate 1 계약 배포 완료 / production rollout·비용 승인 미완료**
-기준일: 2026-09-21
+상태: **production rollout OFF / transient bridge source candidate 미배포**
+기준일: 2026-09-23
 
 ## 결정
 
@@ -19,8 +19,10 @@ Gate 0에서 내려받은 운영 Rules는 `/v2/rooms/{room}/presence`, legacy ty
 허용했다. Gate 1은 이를 제거하고 canonical `/v2/a`, `/v2/l`, `/v2/n` Rules를 production에 배포한 뒤
 canonical hash를 read-back했다.
 
-현재 released client는 Firebase v2를 사용하지 않고 기존 Supabase RPC/Broadcast/Presence 계약을
-사용한다. Supabase production compatibility migration과 v2-capable client release는 아직 없다.
+현재 released client는 기존 Supabase RPC/Broadcast/Presence 계약을 사용한다. Supabase production M0는
+배포됐지만, 새 client가 t/c/x를 직접 쓰고 old client와 양방향 호환시키는
+`20260922192118_firebase_transient_bridge.sql`, Functions 5개 추가분과 새 Rules는 source candidate이며
+미배포다. Presence는 이 전환 뒤에도 Supabase에 남는다.
 
 ## 비용 검증 기준
 

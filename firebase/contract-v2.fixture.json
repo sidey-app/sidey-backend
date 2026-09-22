@@ -1,13 +1,13 @@
 {
   "protocolVersion": 2,
   "status": {
-    "firebaseGate1": "deployed-and-verified",
+    "firebaseGate1": "deployed-old-contract-requires-fail-closed-rollout-disable-before-upgrade",
     "supabaseStaging": "validated-through-20260921070944",
-    "supabaseProduction": "not-migrated",
-    "compatibilityMigration": "local-candidate-20260921102516",
-    "wireCodeMigration": "local-candidate-20260921110000",
-    "compatibilityBridgeMigration": "local-candidate-20260921132018",
-    "clientRelease": "not-ready"
+    "supabaseProduction": "deployed-through-20260921142300",
+    "compatibilityMigration": "deployed-20260921102516",
+    "wireCodeMigration": "deployed-20260921110000",
+    "compatibilityBridgeMigration": "source-candidate-20260922192118",
+    "clientRelease": "new-contract-not-released"
   },
   "projectId": "sidey-realtime",
   "databaseInstance": "sidey",
@@ -147,11 +147,12 @@
     }
   },
   "transientReceiver": {
-    "compatibilityTransport": "supabase-private-broadcast-only",
-    "compactFirebasePaths": "reserved-receive-ignored",
-    "compactFirebaseClientWrites": false,
-    "futureTransitionContract": {
-      "status": "reserved-not-active",
+    "primaryTransport": "firebase-rtdb-compact-t-c-x",
+    "compatibilityTransport": "temporary-bidirectional-server-bridge-to-supabase-private-broadcast",
+    "compactFirebasePaths": "active-when-session-selected-and-global-gate-enabled",
+    "compactFirebaseClientWrites": true,
+    "transitionContract": {
+      "status": "source-candidate-not-deployed",
       "rulesTimestampWindowMs": {"minimum": "now-1000", "maximum": "now"},
       "receiverFreshnessMs": 5000,
       "initialSnapshot": "baseline-only-no-animation",
@@ -159,6 +160,14 @@
       "typingStop": "delete-exact-session-slot",
       "lostWriteResponse": "do-not-immediately-retry",
       "unknownWireCode": "drop-fail-closed"
+    },
+    "legacyBridge": {
+      "firebaseToSupabase": "rtdb-trigger-cloud-event-id-dedupe-private-broadcast",
+      "supabaseToFirebase": "durable-outbox-monotonic-slot-cas",
+      "loopPrevention": "ignore-admin-origin-rtdb-trigger",
+      "runtimeDisableRpc": "configure_firebase_transient_bridge_v2",
+      "automaticCutoff": false,
+      "disableAfter": "minimum-seven-day-observation-plus-old-new-matrix-and-capability-evidence"
     }
   },
   "hints": {
@@ -185,7 +194,7 @@
     "unknownIncoming": "drop-fail-closed",
     "mappingMigration": "20260921110000_firebase_wire_code_contract",
     "catalogSha256": "54e2f0298c4652d113e34374bc748fda829300e327ff9dd682df316fc149884b",
-    "productionMapping": "candidate-pinned-pending-M0-read-back"
+    "productionMapping": "deployed-and-read-back"
   },
   "roomDeletion": {
     "tombstone": "/v2/a/d/{roomId}",

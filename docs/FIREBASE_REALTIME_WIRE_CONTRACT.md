@@ -1,6 +1,6 @@
 # Firebase Realtime wire contract
 
-상태: **Gate 1 Firebase 배포 완료 / M0 production candidate는 미배포**
+상태: **old production contract rollout OFF / transient bridge source candidate 미배포**
 프로토콜 목표 버전: `2`
 
 ## 고정 전제
@@ -18,11 +18,12 @@
 | 경로 | 소유자 | 의미 |
 | --- | --- | --- |
 | `/v2/a` | server only | access/session/membership mirror와 revocation fence |
-| `/v2/l/{roomId}` | room member read, server write | active room의 예약된 compact transient slot `t/c/x`와 최신 chat event `e`; 호환 기간에는 client transient write 금지 |
+| `/v2/l/{roomId}` | room member read; t/c/x는 제한된 client write, e는 server write | active room의 compact transient slot `t/c/x`와 최신 chat event `e` |
 | `/v2/n/{userId}` | 해당 사용자 read, server write | access, room revision, chat sequence hint |
 
 클라이언트 read는 유효한 Supabase session claim, active account, room membership, 최신 global access health를
-모두 만족해야 한다. 호환 기간의 compact transient client write는 전부 거부한다.
+모두 만족해야 한다. t/c/x write는 자기 UID/current session slot, room/target membership, entitlement,
+gate/lease/access health와 각 cooldown을 만족할 때만 허용한다.
 
 ### server-only access layout
 
@@ -43,9 +44,9 @@ lifecycle/상한은 Gate 2 migration에서 확정한다. session revoke는 acces
 
 | 경로 | payload | 제약 |
 | --- | --- | --- |
-| `/v2/l/{rid}/t/{uid}/{sideySessionId}` | epoch millisecond number | 호환 기간 예약 경로; client write 금지·수신 무시 |
-| `/v2/l/{rid}/c/{uid}` | epoch millisecond number | 호환 기간 예약 경로; client write 금지·수신 무시 |
-| `/v2/l/{rid}/x/{uid}` | `{u, k, t}` | 호환 기간 예약 경로; client write 금지·수신 무시 |
+| `/v2/l/{rid}/t/{uid}/{sideySessionId}` | epoch millisecond number | 자기 exact session slot; 1500ms cooldown; delete는 exact cleanup 허용 |
+| `/v2/l/{rid}/c/{uid}` | epoch millisecond number | 자기 UID; 1000ms cooldown |
+| `/v2/l/{rid}/x/{uid}` | `{u, k, t}` | 자기 UID; target member와 wire entitlement; 500ms cooldown |
 | `/v2/l/{rid}/e` | `{i, s, b, t, n, k?}` | server-only latest chat event |
 | `/v2/n/{uid}/a` | 20자리 decimal revision string | server-only access hint |
 | `/v2/n/{uid}/r/{rid}/v` | 20자리 decimal revision string | server-only room hint |
@@ -55,6 +56,11 @@ Gate 1에 실제 배포된 byte-identical fixture는
 `firebase/contract-v2.gate1-deployed.fixture.json`에 보존한다. M0/client production candidate 계약은
 `firebase/contract-v2.fixture.json`에 두며, Firebase Gate 1·Supabase staging·Supabase production·client
 release 상태를 서로 분리한다.
+
+현재 source candidate fixture SHA-256은
+`0f2845d033df248b1745c6526c8c7100b8d8fa6839b45f28c73b1023053fce2e`다. production에는 old hash가
+남아 있고 selector/gate는 OFF다. 배포는 old gate/selector OFF read-back 유지 → forward migration →
+Functions/Rules → exact read-back → selector ON → Firebase gate true 순서만 허용한다.
 
 ## Bootstrap과 grant convergence
 
@@ -82,10 +88,16 @@ release 상태를 서로 분리한다.
 
 ## 수신·재조정 계약
 
-- 호환 기간에는 typing/pulse/throw를 authenticated Supabase RPC와 private Broadcast로만 발행·수신한다.
-  Firebase Rules는 `/v2/l/{room}/t|c|x` client write를 거부하고 client는 해당 snapshot을 무시한다.
-- compact transient timestamp/high-water 규칙은 향후 별도 전환 gate용 예약 계약이며 현재 rollout의
-  송수신 근거로 사용하지 않는다.
+- 새 v2 client는 typing/pulse/throw를 Firebase t/c/x에 한 번만 발행하고 Firebase snapshot에서 수신한다.
+  old client는 기존 authenticated Supabase RPC/private Broadcast를 그대로 사용한다. client가 두 transport에
+  동시에 발행하지 않는다.
+- Firebase→Supabase trigger는 CloudEvent ID에서 안정 UUID를 만들고 service RPC가 dedupe, 현재 session,
+  membership, target, entitlement와 공유 rate ledger를 재검증한다. Admin SDK mirror write는 trigger에서
+  제외하므로 loop가 없다.
+- Supabase→Firebase는 transaction outbox와 exact claim/validate/ACK를 사용한다. compact slot transaction은
+  timestamp high-water를 지켜 오래된 retry가 최신 animation을 덮지 못하게 한다.
+- initial snapshot은 baseline일 뿐 animation을 재생하지 않는다. 이후 event도 timestamp가 5초보다 오래됐으면
+  억제한다. t/c/x는 일시 상태이며 message history나 source of truth가 아니다.
 - access/room revision은 20자리 string을 lexical compare한다. access hint는 bootstrap barrier 재수렴,
   room hint는 authoritative Supabase room snapshot reload, chat sequence gap은 Supabase 3일 history
   reload를 유발한다.
@@ -103,9 +115,13 @@ release 상태를 서로 분리한다.
 - `20260921132018_firebase_mixed_version_supabase_bridge.sql`은 Firebase-live room에서도
   `message_changed`, `messages_pruned`, `structure_changed`와 typing/pulse/throw의 기존 Supabase private
   Broadcast를 유지한다.
-- 호환 기간의 typing/pulse/throw 발행·수신은 old/new client 모두 기존 authenticated Supabase RPC/Broadcast
-  plane만 사용한다. compact `/v2/l/{room}/t|c|x`는 Rules에서 client write가 금지되고 수신도 무시한다.
-  아래 staging-only `/v2/rooms/.../events` outbox는 compact `/v2/l` client 계약이 아니며 native v2 호환
+- forward migration `20260922192118_firebase_transient_bridge.sql`은 old Supabase RPC를 durable outbox로
+  Firebase t/c/x에 mirror하고, Firebase client write를 private Supabase Broadcast에 mirror한다. 동일 source
+  event UUID와 CloudEvent-derived UUID, monotonic slot write, Admin-trigger skip으로 retry dedupe와 loop 방지를
+  강제한다. 이 migration/Functions/Rules는 현재 source candidate이며 deployed read-back이 아니다.
+- `configure_firebase_transient_bridge_v2`는 두 transient bridge 방향을 함께 끄고 pending publication을
+  안전하게 settle한다. Presence와 durable/structure routing은 이 switch의 영향을 받지 않는다.
+- 아래 staging-only `/v2/rooms/.../events` outbox는 compact `/v2/l` client 계약이 아니며 native v2 호환
   증거로 계산하지 않는다.
 - 이 bridge에는 날짜 기반 runtime cutoff가 없다. 7일은 최소 관찰 기간일 뿐 자동 종료 시점이 아니다.
   활성 client capability 측정 또는 최소 지원 버전 강제와 old↔new chat/typing/pulse/throw/Presence matrix
