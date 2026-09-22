@@ -40,6 +40,7 @@ initializeApp({
 
 const supabaseConfig = defineJsonSecret("SIDEY_SUPABASE_CONFIG");
 const accessWakeToken = defineSecret("SIDEY_ACCESS_WAKE_TOKEN");
+const transientWakeToken = defineSecret("SIDEY_TRANSIENT_WAKE_TOKEN");
 const BOOTSTRAP_WINDOW_MS = 60 * 1000;
 const BOOTSTRAP_WINDOW_LIMIT = 12;
 
@@ -321,12 +322,12 @@ async function runTransientWorker() {
 }
 
 exports.syncRealtimeTransients = onRequest(
-  {...transientWorkerOptions, secrets: [supabaseConfig, accessWakeToken], cors: false},
+  {...transientWorkerOptions, secrets: [supabaseConfig, transientWakeToken], cors: false},
   async (request, response) => {
     if (request.method !== "POST") return sendJson(response, 405, {error: "method_not_allowed"});
     const credential = wakeCredential(request);
     const presented = request.get("x-sidey-wake-token") ? `Bearer ${credential}` : credential;
-    if (!authorizedWake(presented, accessWakeToken.value())) {
+    if (!authorizedWake(presented, transientWakeToken.value())) {
       return sendJson(response, 401, {error: "authentication_required"});
     }
     try {
