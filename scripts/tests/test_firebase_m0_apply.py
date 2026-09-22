@@ -1199,6 +1199,11 @@ class FirebaseM0ApplyTests(unittest.TestCase):
             return ""
 
         with (
+            mock.patch.object(
+                apply,
+                "LINKED_PROJECT_REF",
+                mock.Mock(read_text=mock.Mock(return_value=apply.PROJECT_REF)),
+            ),
             mock.patch.object(apply, "run", side_effect=fake_run),
             mock.patch.object(apply, "canonicalize_schema_dump", return_value=b"canonical"),
             mock.patch.object(apply, "realtime_contract_snapshot", return_value={"state": "ready"}) as realtime,
