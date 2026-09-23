@@ -322,7 +322,8 @@ async function runTransientWorker() {
 }
 
 exports.syncRealtimeTransients = onRequest(
-  {...transientWorkerOptions, secrets: [supabaseConfig, transientWakeToken], cors: false},
+  {...transientWorkerOptions, minInstances: 1,
+    secrets: [supabaseConfig, transientWakeToken], cors: false},
   async (request, response) => {
     if (request.method !== "POST") return sendJson(response, 405, {error: "method_not_allowed"});
     const credential = wakeCredential(request);

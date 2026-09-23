@@ -161,6 +161,55 @@ test("legacy publications converge into compact slots without stale retry overwr
   assert.equal(database.values.get(`/v2/l/${room}/c/${actor}`), occurredAt + 1000);
 });
 
+test("a slow claimed publication cannot serially age out the rest of a burst", async () => {
+  const database = fakeDatabase();
+  let validating = 0;
+  let maxValidating = 0;
+  const result = await synchronizeTransientPublications({
+    database, config: {}, workerId: worker, now: () => occurredAt + 100,
+    rpc: async (_, name) => {
+      if (name === "claim_firebase_transient_publications") {
+        return Array.from({length: 10}, (_, index) => job("character_throw", {
+          id: index + 1, occurred_at_ms: occurredAt + index,
+        }));
+      }
+      if (name === "validate_firebase_transient_publication") {
+        validating++;
+        maxValidating = Math.max(maxValidating, validating);
+        await new Promise((resolve) => setImmediate(resolve));
+        validating--;
+        return true;
+      }
+      if (name === "ack_firebase_transient_publication") return true;
+      throw new Error("unexpected_rpc");
+    },
+  });
+  assert.deepEqual(result, {claimed: 10, delivered: 10, expired: 0, failed: 0});
+  assert.equal(maxValidating, 10);
+  assert.equal(database.values.get(`/v2/l/${room}/x/${actor}`).t, occurredAt + 9);
+});
+
+test("parallel publication preserves start-before-stop on one typing slot", async () => {
+  const database = fakeDatabase();
+  const path = `/v2/l/${room}/t/${actor}/${session}`;
+  const result = await synchronizeTransientPublications({
+    database, config: {}, workerId: worker, now: () => occurredAt + 100,
+    rpc: async (_, name, args) => {
+      if (name === "claim_firebase_transient_publications") return [
+        job("typing_start"), job("typing_stop", {id: 2, occurred_at_ms: occurredAt + 1}),
+      ];
+      if (name === "validate_firebase_transient_publication") {
+        if (args.p_id === 1) await new Promise((resolve) => setImmediate(resolve));
+        return true;
+      }
+      if (name === "ack_firebase_transient_publication") return true;
+      throw new Error("unexpected_rpc");
+    },
+  });
+  assert.deepEqual(result, {claimed: 2, delivered: 2, expired: 0, failed: 0});
+  assert.equal(database.values.has(path), false);
+});
+
 test("typing stop and post-publish revocation remove only the matching old slot", async () => {
   const database = fakeDatabase();
   const path = `/v2/l/${room}/t/${actor}/${session}`;

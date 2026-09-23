@@ -124,6 +124,7 @@ async function accessRpc(config, name, args, fetchImpl = fetch) {
 }
 
 function parseAccessSnapshot(payload, userId) {
+  const roomTargets = payload?.room_targets ?? {};
   if (
     typeof userId !== "string" || !UUID_PATTERN.test(userId) ||
     payload?.user_id !== userId ||
@@ -136,6 +137,14 @@ function parseAccessSnapshot(payload, userId) {
     !Array.isArray(payload.rooms) ||
     payload.rooms.length > 5 ||
     payload.rooms.some((roomId) => typeof roomId !== "string" || !UUID_PATTERN.test(roomId)) ||
+    !roomTargets || typeof roomTargets !== "object" || Array.isArray(roomTargets) ||
+    Object.keys(roomTargets).length > 5 ||
+    Object.entries(roomTargets).some(([roomId, targets]) =>
+      !UUID_PATTERN.test(roomId) || !payload.rooms.includes(roomId) ||
+      !targets || typeof targets !== "object" || Array.isArray(targets) ||
+      Object.keys(targets).length > 11 ||
+      Object.entries(targets).some(([targetId, allowed]) =>
+        !UUID_PATTERN.test(targetId) || targetId === userId || allowed !== true)) ||
     !Array.isArray(payload.items) ||
     payload.items.length > 20 ||
     payload.items.some((itemId) => typeof itemId !== "string" || !ITEM_PATTERN.test(itemId)) ||
@@ -161,6 +170,7 @@ function parseAccessSnapshot(payload, userId) {
     // every session for that user; Gate 2 adds the source-side lifecycle policy.
     sessions: Object.fromEntries(selectedSessions),
     rooms: [...new Set(payload.rooms.map((roomId) => roomId.toLowerCase()))],
+    roomTargets,
     items: [...new Set(payload.items)],
     wireItems: [...new Set(payload.wire_items)],
   };

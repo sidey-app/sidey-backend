@@ -21,6 +21,13 @@ const wakeMigration = fs.readFileSync(
 const productionWakeMigration = fs.readFileSync(
   path.join(root, "supabase/production-migrations", wakeMigrationName), "utf8",
 );
+const targetMigrationName = "20260923111453_firebase_throw_room_targets.sql";
+const targetMigration = fs.readFileSync(
+  path.join(root, "supabase/migrations", targetMigrationName), "utf8",
+);
+const productionTargetMigration = fs.readFileSync(
+  path.join(root, "supabase/production-migrations", targetMigrationName), "utf8",
+);
 const fixtureBytes = fs.readFileSync(path.join(root, "firebase/contract-v2.fixture.json"));
 const fixtureHash = crypto.createHash("sha256").update(fixtureBytes).digest("hex");
 
@@ -49,4 +56,13 @@ test("transient wake uses a dedicated secret without rotating existing workers",
   assert.match(wakeMigration, /name = 'sidey_transient_wake_token'/);
   assert.doesNotMatch(wakeMigration, /name = 'sidey_access_wake_token'/);
   assert.match(wakeMigration, /create or replace function private\.wake_firebase_transient_publication/);
+});
+
+test("hybrid senders mirror legacy room targets and wake before transient expiry", () => {
+  assert.equal(targetMigration, productionTargetMigration);
+  assert.match(targetMigration, /'room_targets', room_targets/);
+  assert.match(targetMigration, /create trigger firebase_access_membership[\s\S]*capture_firebase_room_target_access/);
+  assert.match(targetMigration, /update private\.firebase_access_outbox[\s\S]*revision = revision \+ 1/);
+  assert.match(targetMigration, /name = 'sidey_transient_wake_token'/);
+  assert.match(targetMigration, /timeout_milliseconds := 5000/);
 });

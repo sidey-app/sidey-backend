@@ -8,6 +8,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const {PGlite} = require("@electric-sql/pglite");
 const uid = "10000000-0000-4000-8000-000000000001";
+const legacyTarget = "10000000-0000-4000-8000-000000000002";
 const room = "20000000-0000-4000-8000-000000000001";
 const sid = "30000000-0000-4000-8000-000000000001";
 let db;
@@ -27,10 +28,23 @@ test.before(async () => {
     create table auth.users(id uuid primary key, banned_until timestamptz);
     create table auth.sessions(id uuid primary key, user_id uuid, not_after timestamptz, updated_at timestamptz);
     create table public.profiles(id uuid primary key, equipped_throwable_id text);
+    create table public.rooms(id uuid primary key, realtime_epoch bigint);
     create table public.room_members(room_id uuid, user_id uuid);
     create table public.commerce_products(id text primary key, product_kind text,
-      catalog_item_id text, active boolean, entitlement_key text);
+      catalog_item_id text, active boolean, entitlement_key text, wire_code integer);
     create table public.commerce_entitlements(user_id uuid, entitlement_key text, status text);
+    create table private.firebase_transient_bridge_config(singleton boolean, enabled boolean);
+    create table private.firebase_client_rollout_config(id boolean, enabled boolean,
+      kill_switch boolean, cohort_basis_points integer);
+    create table private.firebase_transient_publish_outbox(
+      id bigint generated always as identity primary key, event_id uuid, room_id uuid,
+      epoch bigint, actor_id uuid, session_id uuid, kind text,
+      target_user_id uuid, wire_code text, occurred_at timestamptz default clock_timestamp(),
+      delivered_at timestamptz, claimed_by uuid, claim_until timestamptz,
+      attempts integer default 0
+    );
+    insert into private.firebase_transient_bridge_config values (true,true);
+    insert into private.firebase_client_rollout_config values (true,true,false,10000);
   `);
   const migrations = path.resolve(__dirname, "../../../supabase/migrations");
   const existing = fs.readFileSync(path.join(migrations, "20260919135013_firebase_chat_bridge.sql"), "utf8");
@@ -41,19 +55,23 @@ test.before(async () => {
     "20260919224714_firebase_access_failure_isolation.sql"), "utf8"));
   await db.exec(fs.readFileSync(path.join(migrations,
     "20260921070944_firebase_access_delivery_snapshot.sql"), "utf8"));
+  await db.exec(fs.readFileSync(path.join(migrations,
+    "20260923111453_firebase_throw_room_targets.sql"), "utf8"));
 });
 
 test.after(async () => { await db?.close(); });
 
 test.beforeEach(async () => {
   await db.exec(`truncate private.firebase_access_outbox, auth.users, auth.sessions,
-    public.profiles, public.room_members, public.commerce_products, public.commerce_entitlements;
+    public.profiles, public.rooms, public.room_members, public.commerce_products,
+    public.commerce_entitlements, private.firebase_transient_publish_outbox;
     update private.firebase_access_dispatch set wake_url = null, last_reconcile_date = null;`);
   await db.query("insert into auth.users(id) values ($1)", [uid]);
   await db.query("insert into auth.sessions(id,user_id) values ($1,$2)", [sid, uid]);
   await db.query("insert into public.profiles values ($1,'throwable_ball_red')", [uid]);
   await db.query("insert into public.room_members values ($1,$2)", [room, uid]);
-  await db.exec("insert into public.commerce_products values ('ball','throwable','throwable_ball_red',true,'ball')");
+  await db.query("insert into public.rooms values ($1,1)", [room]);
+  await db.exec("insert into public.commerce_products values ('ball','throwable','throwable_ball_red',true,'ball',7)");
 });
 
 test("only bootstrapped users enter the outbox and clients cannot invoke privileged RPCs", async () => {
@@ -114,6 +132,51 @@ test("membership changes and equipment changes are captured in the same transact
   assert.ok(kicked.revision > before.revision);
   await db.query("update public.profiles set equipped_throwable_id=null where id=$1", [uid]);
   assert.ok((await snapshot()).revision > kicked.revision);
+});
+
+test("a legacy member is mirrored into the hybrid sender roster without bootstrapping Firebase", async () => {
+  const before = await ack();
+  assert.deepEqual(before.room_targets, {});
+  await db.query("insert into auth.users(id) values ($1)", [legacyTarget]);
+  await db.query("insert into public.room_members values ($1,$2)", [room, legacyTarget]);
+  const joined = await snapshot();
+  assert.deepEqual(joined.room_targets, {[room]: {[legacyTarget]: true}});
+  assert.ok(joined.revision > before.revision);
+  assert.equal(await scalar(
+    "select count(*)::int as value from private.firebase_access_outbox where user_id=$1",
+    [legacyTarget],
+  ), 0);
+
+  await db.query("update auth.users set banned_until=now()+interval '1 day' where id=$1", [legacyTarget]);
+  const banned = await snapshot();
+  assert.deepEqual(banned.room_targets, {});
+  assert.ok(banned.revision > joined.revision);
+
+  await db.query("update auth.users set banned_until=null where id=$1", [legacyTarget]);
+  assert.deepEqual((await snapshot()).room_targets, {[room]: {[legacyTarget]: true}});
+  await db.query("delete from public.room_members where user_id=$1", [legacyTarget]);
+  assert.deepEqual((await snapshot()).room_targets, {});
+});
+
+test("an in-flight transient claim is not settled by another worker's expiry sweep", async () => {
+  await db.query("insert into private.firebase_transient_publish_outbox(" +
+    "event_id,room_id,epoch,actor_id,session_id,kind) values ($1,$2,1,$3,$4,'character_pulse')", [
+    "50000000-0000-4000-8000-000000000001", room, uid, sid,
+  ]);
+  const first = (await db.query("select * from public.claim_firebase_transient_publications($1,1)", [
+    "60000000-0000-4000-8000-000000000001",
+  ])).rows;
+  assert.equal(first.length, 1);
+  await db.query("update private.firebase_transient_publish_outbox " +
+    "set occurred_at=clock_timestamp()-interval '6 seconds' where id=$1", [first[0].id]);
+  const second = (await db.query("select * from public.claim_firebase_transient_publications($1,1)", [
+    "60000000-0000-4000-8000-000000000002",
+  ])).rows;
+  assert.equal(second.length, 0);
+  assert.equal(await scalar("select delivered_at is null and claimed_by=$2 as value " +
+    "from private.firebase_transient_publish_outbox where id=$1", [
+    first[0].id, "60000000-0000-4000-8000-000000000001",
+  ]), true);
 });
 
 test("session deletion and ban revoke access; ordinary token refresh does not enqueue work", async () => {

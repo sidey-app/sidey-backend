@@ -17,6 +17,7 @@ const command = {
   body: "안녕하세요",
 };
 const sessionId = "40000000-0000-4000-8000-000000000001";
+const targetId = "10000000-0000-4000-8000-000000000002";
 const fakeJwt = `eyJhbGciOiJIUzI1NiJ9.${Buffer.from(JSON.stringify({
   sub: command.senderId, session_id: sessionId,
 })).toString("base64url")}.signature`;
@@ -120,12 +121,14 @@ test("loads and validates the service-role access snapshot", async () => {
         active: true,
         sessions: {[sessionId]: 8640000000000000},
         rooms: [command.roomId, command.roomId],
+        room_targets: {[command.roomId]: {[targetId]: true}},
         items: ["throwable_bouncy_heart"],
         wire_items: ["7"],
       }), {status: 200, headers: {"content-type": "application/json"}});
     },
   );
   assert.deepEqual(access.rooms, [command.roomId]);
+  assert.deepEqual(access.roomTargets, {[command.roomId]: {[targetId]: true}});
   assert.deepEqual(access.items, ["throwable_bouncy_heart"]);
   assert.deepEqual(access.wireItems, ["7"]);
   assert.equal(request.options.headers.apikey, "sb_secret_test_only_not_a_real_key");

@@ -60,6 +60,7 @@ test.beforeEach(async () => {
         rooms: {[roomId]: true},
         sessions: {[sessionA]: expiresAt, [sessionB]: expiresAt},
         wire_items: {"7": true},
+        room_targets: {[roomId]: {[targetId]: true}},
       },
       [targetId]: {active: true, rooms: {[roomId]: true}},
     },
@@ -94,6 +95,18 @@ test("members write bounded pulse and entitled compact throw slots", async () =>
   await assertFails(set(ref(db, throwPath), {u: targetId, k: "7", t: Date.now(), admin: true}));
   await assertFails(set(ref(db, `v2/l/${roomId}/x/${targetId}`), {
     u: memberId, k: "7", t: Date.now(),
+  }));
+});
+
+test("a hybrid sender can throw to a legacy member without a Firebase target mirror", async () => {
+  const throwPath = `v2/l/${roomId}/x/${memberId}`;
+  await adminSet(`v2/a/u/${targetId}`, null);
+  await assertSucceeds(set(ref(client(memberId), throwPath), {
+    u: targetId, k: "7", t: Date.now(),
+  }));
+  await adminSet(`v2/a/u/${memberId}/room_targets/${roomId}/${targetId}`, null);
+  await assertFails(set(ref(client(memberId), throwPath), {
+    u: targetId, k: "7", t: Date.now() + 600,
   }));
 });
 
