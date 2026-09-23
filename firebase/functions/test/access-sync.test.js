@@ -6,10 +6,12 @@ const {applyAccessSnapshot, authorizedWake, synchronizeAccess, SYNC_LEASE_MS} = 
 const {parseAccessSnapshot} = require("../lib/supabase");
 const uid = "10000000-0000-4000-8000-000000000001";
 const room = "20000000-0000-4000-8000-000000000001";
+const target = "10000000-0000-4000-8000-000000000002";
 const sid = "30000000-0000-4000-8000-000000000001";
 const rev = (v) => String(v).padStart(20, "0");
 const wire = (v = 1) => ({user_id: uid, revision: rev(v), active: true,
   rooms: [room], items: ["throwable_ball_red"], wire_items: ["7"],
+  room_targets: {[room]: {[target]: true}},
   sessions: {[sid]: 8640000000000000}});
 
 function fakeDatabase() {
@@ -52,13 +54,15 @@ function fakeDatabase() {
 test("refund and kick replace permissions atomically; stale grants cannot resurrect them", async () => {
   const db = fakeDatabase();
   await applyAccessSnapshot(db, parseAccessSnapshot(wire(), uid));
-  const revoked = {...wire(3), rooms: [], items: [], wire_items: [], active: false, sessions: {}};
+  const revoked = {...wire(3), rooms: [], room_targets: {}, items: [], wire_items: [],
+    active: false, sessions: {}};
   await applyAccessSnapshot(db, parseAccessSnapshot(revoked, uid));
   await applyAccessSnapshot(db, parseAccessSnapshot(wire(2), uid));
   const current = db.values.get(`/v2/a/u/${uid}`);
   assert.equal(current.revision, rev(3));
   assert.equal(current.active, false);
   assert.deepEqual(current.rooms, {});
+  assert.deepEqual(current.room_targets, {});
   assert.deepEqual(current.items, {});
   assert.deepEqual(current.wire_items, {});
   assert.deepEqual(current.sessions, {});
@@ -72,7 +76,7 @@ test("account revocation coalesces room and session typing cleanup paths", async
   db.values.set(typingPath, Date.now());
 
   await applyAccessSnapshot(db, parseAccessSnapshot({
-    ...wire(2), active: false, rooms: [], items: [], wire_items: [], sessions: {},
+    ...wire(2), active: false, rooms: [], room_targets: {}, items: [], wire_items: [], sessions: {},
   }, uid));
 
   assert.equal(db.values.has(typingPath), false);
@@ -87,11 +91,12 @@ test("redelivery and daily reconciliation repair equal-version corruption", asyn
   await applyAccessSnapshot(db, parseAccessSnapshot(wire(), uid));
   assert.deepEqual(db.values.get(`/v2/a/u/${uid}`).items, {throwable_ball_red: true});
   assert.deepEqual(db.values.get(`/v2/a/u/${uid}`).wire_items, {"7": true});
+  assert.deepEqual(db.values.get(`/v2/a/u/${uid}`).room_targets, {[room]: {[target]: true}});
 });
 
 test("bigint revisions compare without JavaScript precision loss", async () => {
   const db = fakeDatabase();
-  const newer = {...wire(), revision: "00009007199254740993", rooms: []};
+  const newer = {...wire(), revision: "00009007199254740993", rooms: [], room_targets: {}};
   const older = {...wire(), revision: "00009007199254740992"};
   await applyAccessSnapshot(db, parseAccessSnapshot(newer, uid));
   await applyAccessSnapshot(db, parseAccessSnapshot(older, uid));
@@ -108,7 +113,7 @@ test("room revocation removes compact transient state in the same worker deliver
     `/v2/n/${uid}/r/${room}/v`,
   ]) db.values.set(path, {stale: true});
 
-  await applyAccessSnapshot(db, parseAccessSnapshot({...wire(2), rooms: []}, uid));
+  await applyAccessSnapshot(db, parseAccessSnapshot({...wire(2), rooms: [], room_targets: {}}, uid));
 
   for (const path of [
     `/v2/l/${room}/t/${uid}/${sid}`,
@@ -127,11 +132,11 @@ test("failed transient cleanup remains durable and succeeds on equal-revision re
   db.failNextUpdate = true;
 
   await assert.rejects(
-    applyAccessSnapshot(db, parseAccessSnapshot({...wire(2), rooms: []}, uid)),
+    applyAccessSnapshot(db, parseAccessSnapshot({...wire(2), rooms: [], room_targets: {}}, uid)),
     /simulated_cleanup_failure/,
   );
   assert.deepEqual(db.values.get(`/v2/a/u/${uid}`).cleanup_rooms, {[room]: true});
-  await applyAccessSnapshot(db, parseAccessSnapshot({...wire(2), rooms: []}, uid));
+  await applyAccessSnapshot(db, parseAccessSnapshot({...wire(2), rooms: [], room_targets: {}}, uid));
   assert.equal(db.values.has(typingPath), false);
   assert.equal(db.values.get(`/v2/a/u/${uid}`).cleanup_rooms, undefined);
 });
@@ -184,7 +189,7 @@ test("a cleanup marker observed at final read-back prevents an unsafe ACK", asyn
     return reference;
   };
   await assert.rejects(
-    applyAccessSnapshot(db, parseAccessSnapshot({...wire(2), rooms: []}, uid)),
+    applyAccessSnapshot(db, parseAccessSnapshot({...wire(2), rooms: [], room_targets: {}}, uid)),
     /access_cleanup_not_converged/,
   );
   assert.equal(accessReads, 1);
@@ -261,7 +266,8 @@ test("malformed successful snapshots quarantine only that user and ACK the exact
   assert.equal(result.quarantined, 1);
   assert.equal(result.stale, 0);
   assert.deepEqual(db.values.get(`/v2/a/u/${uid}`), {
-    revision: rev(2), active: false, rooms: {}, items: {}, wire_items: {}, sessions: {},
+    revision: rev(2), active: false, rooms: {}, room_targets: {},
+    items: {}, wire_items: {}, sessions: {},
   });
   assert.deepEqual(calls.find(([name]) => name === "firebase_access_ack")[1],
     {p_user_id: uid, p_revision: rev(2)});
@@ -309,7 +315,11 @@ test("snapshot validation bounds source maps and projects 16 sessions by expiry 
   ]));
   for (const payload of [{...wire(), revision: 1}, {...wire(), sessions: {[sid]: "forever"}},
     {...wire(), active: "true"}, {...wire(), rooms: ["invalid"]},
-    {...wire(), sessions: tooManySessions}]) {
+    {...wire(), sessions: tooManySessions},
+    {...wire(), room_targets: {[room]: {"not-a-uuid": true}}},
+    {...wire(), room_targets: {[room]: {[target]: false}}},
+    {...wire(), room_targets: {[room]: {[uid]: true}}},
+    {...wire(), rooms: [], room_targets: {[room]: {[target]: true}}}]) {
     assert.throws(() => parseAccessSnapshot(payload, uid), /supabase_access_mismatch/);
   }
 });
@@ -319,7 +329,8 @@ test("account suspension also removes the stale bootstrap limiter", async () => 
   db.values.set(`/v2/a/b/${uid}`, {window_started: 1, attempts: 1});
   await applyAccessSnapshot(db, parseAccessSnapshot(wire(), uid));
   await applyAccessSnapshot(db, parseAccessSnapshot({
-    ...wire(2), active: false, rooms: [], items: [], wire_items: [], sessions: {},
+    ...wire(2), active: false, rooms: [], room_targets: {},
+    items: [], wire_items: [], sessions: {},
   }, uid));
   assert.equal(db.values.has(`/v2/a/b/${uid}`), false);
 });

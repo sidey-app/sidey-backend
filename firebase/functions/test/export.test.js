@@ -50,6 +50,10 @@ test("transient bridge exports bounded durable workers and three RTDB triggers",
   assert.equal(syncRealtimeTransients.__endpoint.maxInstances, 1);
   assert.equal(syncRealtimeTransients.__endpoint.concurrency, 1);
   assert.equal(syncRealtimeTransients.__endpoint.timeoutSeconds, 60);
+  // The 5-second transient TTL cannot survive a cold-started wake and a
+  // one-minute scheduler fallback. Keep only the HTTP wake warm.
+  assert.equal(syncRealtimeTransients.__endpoint.minInstances, 1);
+  assert.equal(retryRealtimeTransients.__endpoint.minInstances, 0);
   assert.deepEqual(
     syncRealtimeTransients.__endpoint.secretEnvironmentVariables.map((secret) => secret.key),
     ["SIDEY_SUPABASE_CONFIG", "SIDEY_TRANSIENT_WAKE_TOKEN"],

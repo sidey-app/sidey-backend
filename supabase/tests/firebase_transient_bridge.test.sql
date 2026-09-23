@@ -258,6 +258,56 @@ set local role postgres;
 update auth.sessions set not_after = null
 where id = 'c2000000-0000-4000-8000-000000000001';
 
+-- A concurrent wake must not expire another worker's still-valid 90-second
+-- claim just because the transient crossed its five-second freshness bound.
+update private.firebase_transient_publish_outbox
+set delivered_at = clock_timestamp(), claimed_by = null, claim_until = null
+where delivered_at is null;
+insert into private.firebase_transient_publish_outbox(
+  event_id, room_id, epoch, actor_id, session_id, kind
+) values (
+  'e4000000-0000-4000-8000-000000000003',
+  (select room_id from transient_bridge_room),
+  (select realtime_epoch from public.rooms where id = (select room_id from transient_bridge_room)),
+  'c1000000-0000-4000-8000-000000000001',
+  'c2000000-0000-4000-8000-000000000001',
+  'character_pulse'
+);
+set local role service_role;
+create temporary table raced_transient_claim as
+select * from public.claim_firebase_transient_publications(
+  'e4000000-0000-4000-8000-000000000003', 1
+);
+select is((select count(*)::integer from raced_transient_claim), 1,
+  'first worker claims the fresh publication');
+set local role postgres;
+update private.firebase_transient_publish_outbox
+set occurred_at = clock_timestamp() - interval '6 seconds'
+where event_id = 'e4000000-0000-4000-8000-000000000003';
+set local role service_role;
+select is(
+  (select count(*)::integer from public.claim_firebase_transient_publications(
+    'e4000000-0000-4000-8000-000000000004', 100
+  )),
+  0,
+  'second worker neither claims nor settles an in-flight expired publication'
+);
+select ok(
+  public.validate_firebase_transient_publication(
+    'e4000000-0000-4000-8000-000000000003',
+    (select id from raced_transient_claim)
+  ),
+  'first worker retains its security claim after a concurrent wake'
+);
+select ok(
+  public.ack_firebase_transient_publication(
+    'e4000000-0000-4000-8000-000000000003',
+    (select id from raced_transient_claim)
+  ),
+  'first worker can settle the claim itself'
+);
+set local role postgres;
+
 -- Firebase-origin events use a direct private Broadcast and never re-enter the
 -- legacy outbox. CloudEvent-derived UUIDs dedupe retries.
 delete from private.realtime_event_attempts

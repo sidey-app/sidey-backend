@@ -10,6 +10,7 @@ const TRANSIENT_KINDS = new Set([
 ]);
 const TRANSIENT_FRESHNESS_MS = 5_000;
 const BATCH_SIZE = 100;
+const BATCH_CONCURRENCY = 10;
 
 function stableEventUuid(cloudEventId, kind) {
   if (typeof cloudEventId !== "string" || cloudEventId.length < 1 || cloudEventId.length > 512 ||
@@ -249,29 +250,55 @@ async function synchronizeTransientPublications({
   let delivered = 0;
   let expired = 0;
   let failed = 0;
+  // Typing stop deletes a slot, so it has no timestamp tombstone that could
+  // reject an older start arriving afterwards. Preserve claim order per exact
+  // typing slot while independent slots and monotonic pulse/throw transactions
+  // can progress concurrently.
+  const groups = [];
+  const typingGroups = new Map();
   for (const row of rows) {
-    try {
-      const job = parseTransientJob(row);
-      const fresh = now() <= job.occurredAtMs + TRANSIENT_FRESHNESS_MS;
-      const before = await rpc(config, "validate_firebase_transient_publication", {
-        p_worker: workerId, p_id: job.id,
-      });
-      if (before === true && fresh) await applyTransientJob(database, job);
-      else await removeExactTransientJob(database, job);
-      const after = await rpc(config, "validate_firebase_transient_publication", {
-        p_worker: workerId, p_id: job.id,
-      });
-      if (after !== true || !fresh) await removeExactTransientJob(database, job);
-      const acknowledged = await rpc(config, "ack_firebase_transient_publication", {
-        p_worker: workerId, p_id: job.id,
-      });
-      if (acknowledged !== true) throw new Error("transient_claim_lost");
-      delivered++;
-      if (!fresh) expired++;
-    } catch {
-      failed++;
+    if (row?.kind === "typing_start" || row?.kind === "typing_stop") {
+      const key = `${row.room_id}:${row.actor_id}:${row.session_id}`;
+      if (!typingGroups.has(key)) {
+        typingGroups.set(key, []);
+        groups.push(typingGroups.get(key));
+      }
+      typingGroups.get(key).push(row);
+    } else {
+      groups.push([row]);
     }
   }
+  let cursor = 0;
+  await Promise.all(Array.from({length: Math.min(BATCH_CONCURRENCY, groups.length)}, async () => {
+    while (cursor < groups.length) {
+      const group = groups[cursor++];
+      for (const row of group) {
+        try {
+          const job = parseTransientJob(row);
+          const before = await rpc(config, "validate_firebase_transient_publication", {
+            p_worker: workerId, p_id: job.id,
+          });
+          // A queued RPC can cross the five-second boundary while another job
+          // is in flight. Check immediately before the compact remote write.
+          const fresh = now() <= job.occurredAtMs + TRANSIENT_FRESHNESS_MS;
+          if (before === true && fresh) await applyTransientJob(database, job);
+          else await removeExactTransientJob(database, job);
+          const after = await rpc(config, "validate_firebase_transient_publication", {
+            p_worker: workerId, p_id: job.id,
+          });
+          if (after !== true || !fresh) await removeExactTransientJob(database, job);
+          const acknowledged = await rpc(config, "ack_firebase_transient_publication", {
+            p_worker: workerId, p_id: job.id,
+          });
+          if (acknowledged !== true) throw new Error("transient_claim_lost");
+          delivered++;
+          if (!fresh) expired++;
+        } catch {
+          failed++;
+        }
+      }
+    }
+  }));
   return {claimed: rows.length, delivered, expired, failed};
 }
 
