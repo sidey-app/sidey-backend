@@ -7,7 +7,7 @@ SIDEY_CONCURRENCY_TMP=$(mktemp -d "${TMPDIR:-/tmp}/sidey-db-concurrency.XXXXXX")
 
 cleanup() {
 	docker exec "$SIDEY_DB_CONTAINER" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q \
-		-c "drop trigger if exists sidey_concurrency_pause_profiles on public.profiles; drop trigger if exists sidey_concurrency_pause_room_members on public.room_members; drop trigger if exists sidey_concurrency_pause_invite_attempts on private.invite_attempts; drop function if exists private.sidey_concurrency_pause_before_insert(); delete from public.rooms where id::text like '40000000-0000-0000-0000-%'; delete from auth.users where id::text like '30000000-0000-0000-0000-%';" \
+		-c "drop trigger if exists sidey_concurrency_pause_profiles on public.profiles; drop trigger if exists sidey_concurrency_pause_room_members on public.room_members; drop trigger if exists sidey_concurrency_pause_invite_attempts on private.invite_attempts; drop trigger if exists sidey_concurrency_pause_message_attempts on private.message_attempts; drop function if exists private.sidey_concurrency_pause_before_insert(); delete from public.rooms where id::text like '40000000-0000-0000-0000-%'; delete from auth.users where id::text like '30000000-0000-0000-0000-%';" \
 		>/dev/null 2>&1 || true
 	docker exec "$SIDEY_DB_CONTAINER" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q \
 		-c "update private.firebase_live_dispatch_config set enabled=false,owner_run_id=null,run_deadline_at=null where owner_run_id='81000000-0000-4000-8000-000000000099'; update private.firebase_live_dispatch_state set phase=null,owner_run_id=null,dispatch_id=null,expires_at='-infinity',enqueue_count=0,started_count=0,finished_count=0,cumulative_totals='{}',last_result='{}' where owner_run_id='81000000-0000-4000-8000-000000000099';" \
@@ -189,3 +189,5 @@ printf 'Supabase concurrent checks passed: five rooms, twelve members, invite ra
 python3 "$SIDEY_REPO_ROOT/scripts/supabase/test_publish_wake_concurrency.py" "$SIDEY_DB_CONTAINER"
 
 python3 "$SIDEY_REPO_ROOT/scripts/supabase/test_publisher_ack_claim_concurrency.py" "$SIDEY_DB_CONTAINER"
+
+python3 "$SIDEY_REPO_ROOT/scripts/supabase/test_message_rate_concurrency.py" "$SIDEY_DB_CONTAINER"
